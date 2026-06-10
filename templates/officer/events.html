@@ -1,0 +1,81 @@
+{% extends "officer/officer_base.html" %}
+{% block title %}Events — Tri-M Hours{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Events</h2>
+  <button class="btn btn-primary" data-toggle="collapse" data-target="#createForm">
+    <i class="fas fa-plus mr-1"></i>New Event
+  </button>
+</div>
+
+<div class="collapse mb-4" id="createForm">
+  <div class="card card-body">
+    <h5 class="mb-3">Create Event</h5>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div class="form-group col-md-5">
+          <label>Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control" required>
+        </div>
+        <div class="form-group col-md-3">
+          <label>Date <span class="text-danger">*</span></label>
+          <input type="date" name="date" class="form-control" required>
+        </div>
+        <div class="form-group col-md-2">
+          <label>Hours</label>
+          <input type="number" name="hours_value" class="form-control" step="0.5" min="0.5" value="1.0" required>
+        </div>
+        <div class="form-group col-md-2">
+          <label>Location</label>
+          <input type="text" name="location" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" name="description" class="form-control">
+      </div>
+      <button type="submit" class="btn btn-success">Create Event</button>
+      <button type="button" class="btn btn-link" data-toggle="collapse" data-target="#createForm">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="thead-dark">
+        <tr><th>Title</th><th>Date</th><th>Location</th><th>Hours</th><th>Status</th><th>Sign-ups</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td class="align-middle">{{ event.title }}</td>
+          <td class="align-middle">{{ event.date.strftime('%b %d, %Y') }}</td>
+          <td class="align-middle text-muted">{{ event.location or '—' }}</td>
+          <td class="align-middle">{{ event.hours_value }}</td>
+          <td class="align-middle">
+            {% if event.status == 'active' %}<span class="badge badge-success">Active</span>
+            {% elif event.status == 'completed' %}<span class="badge badge-secondary">Completed</span>
+            {% elif event.status == 'pending_approval' %}<span class="badge badge-warning">Pending</span>
+            {% elif event.status == 'cancelled' %}<span class="badge badge-danger">Cancelled</span>
+            {% endif %}
+          </td>
+          <td class="align-middle">{{ event.signups|length }}</td>
+          <td class="align-middle">
+            {% if event.status == 'active' %}
+            <a href="{{ url_for('officer.attendance', event_id=event.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-check-square mr-1"></i>Attendance
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No events yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
