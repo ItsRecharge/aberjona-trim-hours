@@ -1,7 +1,7 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
 
 landing_bp = Blueprint('landing', __name__)
 
 @landing_bp.route('/')
 def index():
-    return 'ok'
+    return render_template('landing.html')
