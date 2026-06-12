@@ -50,10 +50,10 @@ def _seed_demo_data():
     if User.query.count() > 0:
         return
 
-    officer = User(id=1, first_name='Alex', last_name='Johnson',
-                   email='alex@trimaberjona.org', role='officer')
-    member = User(id=2, first_name='Sam', last_name='Rivera',
-                  email='sam@trimaberjona.org', role='member')
+    officer = User(id=1, first_name='Officer', last_name='',
+                   email='officer@demo.local', role='officer')
+    member = User(id=2, first_name='Member', last_name='1',
+                  email='member1@demo.local', role='member')
     db.session.add_all([officer, member])
     db.session.flush()
 

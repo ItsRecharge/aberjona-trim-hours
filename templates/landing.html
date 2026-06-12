@@ -1,24 +1,155 @@
 {% extends "base.html" %}
 {% block title %}Aberjona Tri-M Hours Log{% endblock %}
+{% block head %}
+<style>
+  body { margin: 0; }
+  .hero-section {
+    background: linear-gradient(135deg, #1a237e 0%, #283593 40%, #3949ab 70%, #5c6bc0 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-section::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 55%),
+                radial-gradient(ellipse at 70% 80%, rgba(0,0,0,0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero-title {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .hero-subtitle {
+    font-size: 1.15rem;
+    color: rgba(255,255,255,0.75);
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .access-card {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 18px;
+    padding: 2rem 1.25rem 1.75rem;
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+    display: block;
+    backdrop-filter: blur(12px);
+  }
+  .access-card:hover {
+    background: rgba(255,255,255,0.20);
+    transform: translateY(-5px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+    color: #fff;
+    text-decoration: none;
+  }
+  .access-card .card-icon {
+    font-size: 2.4rem;
+    margin-bottom: 0.85rem;
+    display: block;
+    opacity: 0.92;
+  }
+  .access-card .card-label {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .access-card .card-desc {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 0.3rem;
+  }
+  .deco-note {
+    position: absolute;
+    color: rgba(255,255,255,0.05);
+    user-select: none;
+    pointer-events: none;
+  }
+  .demo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 999px;
+    padding: 0.3rem 1.1rem;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.65);
+    letter-spacing: 0.4px;
+  }
+  .chapter-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 1rem;
+  }
+  .divider-line {
+    width: 48px;
+    height: 3px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 2px;
+    margin: 1.25rem auto;
+  }
+</style>
+{% endblock %}
 {% block body %}
-<div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
-  <div class="text-center mb-5">
-    <i class="fas fa-music fa-3x mb-3 text-primary"></i>
-    <h1 class="font-weight-bold">Aberjona Tri-M Hours Log</h1>
-    <p class="text-muted lead">Track and manage community service hours for the chapter.</p>
-  </div>
-  <div class="row justify-content-center w-100" style="max-width: 480px;">
-    <div class="col-6">
-      <a href="/officer/dashboard" class="btn btn-primary btn-lg btn-block py-4 shadow-sm">
-        <i class="fas fa-star d-block fa-2x mb-2"></i>Officer
-      </a>
+<div class="hero-section">
+  <!-- Decorative music notes -->
+  <i class="fas fa-music deco-note" style="font-size: 9rem; top: 4%; left: 2%; transform: rotate(-18deg);"></i>
+  <i class="fas fa-music deco-note" style="font-size: 14rem; bottom: -2%; right: 3%; transform: rotate(12deg);"></i>
+  <i class="fas fa-music deco-note" style="font-size: 5rem; top: 28%; right: 12%; transform: rotate(-5deg);"></i>
+  <i class="fas fa-music deco-note" style="font-size: 4rem; bottom: 20%; left: 8%; transform: rotate(25deg);"></i>
+
+  <div class="container text-center position-relative" style="z-index: 1;">
+    <div class="chapter-badge">Tri-M Music Honor Society</div>
+
+    <div class="mb-2">
+      <i class="fas fa-music" style="font-size: 3rem; color: rgba(255,255,255,0.9);"></i>
     </div>
-    <div class="col-6">
-      <a href="/member/dashboard" class="btn btn-outline-primary btn-lg btn-block py-4 shadow-sm">
-        <i class="fas fa-user d-block fa-2x mb-2"></i>Member
-      </a>
+
+    <h1 class="hero-title mb-2">Aberjona Chapter</h1>
+    <h2 style="font-size: 1.4rem; font-weight: 300; color: rgba(255,255,255,0.7); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0;">Hours Log</h2>
+
+    <div class="divider-line"></div>
+
+    <p class="hero-subtitle mb-5">Track and manage community service hours for the chapter.</p>
+
+    <!-- Access cards -->
+    <div class="row justify-content-center mb-4 mx-auto" style="max-width: 440px;">
+      <div class="col-6 px-2 mb-3">
+        <a href="/officer/dashboard" class="access-card">
+          <i class="fas fa-shield-alt card-icon"></i>
+          <div class="card-label">Test Admin</div>
+          <div class="card-desc">Officer view</div>
+        </a>
+      </div>
+      <div class="col-6 px-2 mb-3">
+        <a href="/member/dashboard" class="access-card">
+          <i class="fas fa-user card-icon"></i>
+          <div class="card-label">Test User</div>
+          <div class="card-desc">Member view</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="demo-badge">
+      <i class="fas fa-flask"></i> Demo mode — no login required
     </div>
   </div>
-  <p class="text-muted small mt-4">Demo mode — no login required.</p>
 </div>
 {% endblock %}
