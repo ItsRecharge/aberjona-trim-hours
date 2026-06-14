@@ -12,47 +12,53 @@ export interface MemberProgress {
   remaining: number;
 }
 
-/** Sum of attended signup hours for a user in the current school year. */
+/**
+ * Hours a user has earned this school year: attended timeslots (by slot date)
+ * plus approved manual hour reports (by activity date).
+ */
 export async function hoursEarnedForUser(userId: number): Promise<number> {
   const { start, end } = schoolYearRange();
+
   const signups = await db.eventSignup.findMany({
     where: {
       userId,
       attended: true,
-      event: { date: { gte: start, lte: end } },
+      timeslot: { date: { gte: start, lte: end } },
     },
-    include: { event: { select: { hoursValue: true } } },
+    include: { timeslot: { select: { hoursValue: true } } },
   });
-  return signups.reduce((sum, s) => sum + s.event.hoursValue, 0);
+  const eventHours = signups.reduce((sum, s) => sum + s.timeslot.hoursValue, 0);
+
+  const reports = await db.hourReport.findMany({
+    where: { userId, status: "approved", date: { gte: start, lte: end } },
+    select: { hoursRequested: true },
+  });
+  const reportHours = reports.reduce((sum, r) => sum + r.hoursRequested, 0);
+
+  return eventHours + reportHours;
 }
 
 /** All members with computed hours, sorted by remaining (most-needed first). */
 export async function listMembersWithProgress(): Promise<MemberProgress[]> {
-  const { start, end } = schoolYearRange();
   const members = await db.user.findMany({
     where: { role: "member" },
-    include: {
-      signups: {
-        where: { attended: true, event: { date: { gte: start, lte: end } } },
-        include: { event: { select: { hoursValue: true } } },
-      },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      emailVerifiedAt: true,
+      createdAt: true,
     },
     orderBy: { firstName: "asc" },
   });
 
-  return members
-    .map((m) => {
-      const earned = m.signups.reduce((sum, s) => sum + s.event.hoursValue, 0);
-      return {
-        id: m.id,
-        firstName: m.firstName,
-        lastName: m.lastName,
-        email: m.email,
-        emailVerifiedAt: m.emailVerifiedAt,
-        createdAt: m.createdAt,
-        earned,
-        remaining: hoursRemaining(earned),
-      };
-    })
-    .sort((a, b) => b.remaining - a.remaining);
+  const withHours = await Promise.all(
+    members.map(async (m) => {
+      const earned = await hoursEarnedForUser(m.id);
+      return { ...m, earned, remaining: hoursRemaining(earned) };
+    }),
+  );
+
+  return withHours.sort((a, b) => b.remaining - a.remaining);
 }

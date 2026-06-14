@@ -15,7 +15,7 @@ export default async function RequestEventPage() {
       </div>
 
       <form action={requestEventAction} className="rounded-xl bg-white p-6 shadow-sm">
-        <EventFormFields submitLabel="Submit Request" />
+        <EventFormFields submitLabel="Submit Request" allowMultipleSlots={false} />
       </form>
     </div>
   );

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validation";
 import { consumeAuthToken, issueAuthToken } from "@/lib/services/token-service";
+import { revokeAllUserSessions } from "@/lib/services/session-service";
 import { hashPassword } from "@/lib/services/auth-service";
 import { sendMail } from "@/lib/email/mailer";
 import { passwordResetEmail } from "@/lib/email/templates";
@@ -64,6 +65,9 @@ export async function resetPasswordAction(
       emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
     },
   });
+
+  // Invalidate every existing session so a stolen/old cookie can't survive a reset.
+  await revokeAllUserSessions(user.id);
 
   await setFlash("success", "Password updated. You can now log in.");
   redirect("/login");

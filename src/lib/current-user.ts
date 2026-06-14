@@ -1,17 +1,19 @@
 import { redirect } from "next/navigation";
 import type { User } from "@prisma/client";
-import { db } from "./db";
-import { getSession } from "./session";
+import { getSessionClaims } from "./session";
+import { validateSession } from "./services/session-service";
 import type { Role } from "./constants";
 
 /**
- * Resolve the logged-in user from the session cookie, re-checking the DB so a
- * deleted or demoted user can't keep acting on a stale JWT.
+ * Resolve the logged-in user from the session cookie. Validates the session row
+ * against the DB so a revoked/expired session — or a deleted/demoted user —
+ * can't keep acting on a stale cookie.
  */
 export async function getCurrentUser(): Promise<User | null> {
-  const session = await getSession();
-  if (!session) return null;
-  return db.user.findUnique({ where: { id: session.userId } });
+  const claims = await getSessionClaims();
+  if (!claims) return null;
+  const session = await validateSession(claims.sid, claims.secret);
+  return session?.user ?? null;
 }
 
 export async function requireUser(role?: Role): Promise<User> {

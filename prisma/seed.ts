@@ -60,56 +60,110 @@ async function seedDemo(officerId: number) {
     },
   });
 
+  // Completed event with a single attended slot (credits 3 hours).
   const foodDrive = await db.event.create({
     data: {
       title: "Winter Food Drive",
       description: "Sorting and packing donations at the community food pantry.",
-      date: utcMidnight(-60),
       location: "Community Center",
-      hoursValue: 3.0,
       status: "completed",
       createdById: officerId,
       approvedById: officerId,
+      timeslots: {
+        create: {
+          date: utcMidnight(-60),
+          startTime: "09:00",
+          endTime: "12:00",
+          hoursValue: 3.0,
+          quota: 10,
+          completedAt: new Date(),
+        },
+      },
     },
+    include: { timeslots: true },
   });
   await db.eventSignup.create({
     data: {
-      eventId: foodDrive.id,
+      timeslotId: foodDrive.timeslots[0].id,
       userId: member.id,
+      status: "confirmed",
       attended: true,
       markedById: officerId,
     },
   });
 
+  // Active event with two timeslots; member is confirmed on the morning slot.
   const concert = await db.event.create({
     data: {
       title: "Spring Concert Volunteering",
       description: "Ushering, setup, and teardown for the spring concert.",
-      date: utcMidnight(21),
       location: "School Auditorium",
-      hoursValue: 2.0,
       status: "active",
       createdById: officerId,
       approvedById: officerId,
+      timeslots: {
+        create: [
+          {
+            date: utcMidnight(21),
+            startTime: "09:00",
+            endTime: "11:00",
+            hoursValue: 2.0,
+            quota: 4,
+          },
+          {
+            date: utcMidnight(21),
+            startTime: "17:00",
+            endTime: "19:00",
+            hoursValue: 2.0,
+            quota: 4,
+          },
+        ],
+      },
     },
+    include: { timeslots: true },
   });
   await db.eventSignup.create({
-    data: { eventId: concert.id, userId: member.id },
+    data: {
+      timeslotId: concert.timeslots[0].id,
+      userId: member.id,
+      status: "confirmed",
+    },
   });
 
+  // Pending member-requested event (single slot).
   await db.event.create({
     data: {
       title: "Library Reading Program",
       description: "Reading with elementary school students at the town library.",
-      date: utcMidnight(30),
       location: "Town Library",
-      hoursValue: 1.5,
       status: "pending_approval",
       createdById: member.id,
+      timeslots: {
+        create: {
+          date: utcMidnight(30),
+          startTime: "15:00",
+          endTime: "16:30",
+          hoursValue: 1.5,
+          quota: 6,
+        },
+      },
     },
   });
 
-  console.log(`Demo data seeded: member1@demo.local / MemberDemo1! + 3 events`);
+  // A pending manual hour report awaiting officer review.
+  await db.hourReport.create({
+    data: {
+      userId: member.id,
+      description: "Played piano at the senior center open house",
+      date: utcMidnight(-10),
+      hoursRequested: 2.0,
+      status: "pending",
+    },
+  });
+
+  console.log(
+    `Demo data seeded: member1@demo.local / MemberDemo1! + 3 events + 1 hour report`,
+  );
 }
 
 main()

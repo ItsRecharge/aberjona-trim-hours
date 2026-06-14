@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, LayoutDashboard, Music, PlusCircle } from "lucide-react";
+import { Calendar, Clock, LayoutDashboard, Music, PlusCircle } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { getFlash } from "@/lib/flash";
 import { FlashMessages } from "@/components/FlashMessages";
@@ -8,6 +8,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 const NAV = [
   { href: "/member/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/member/events", label: "Events", icon: Calendar },
+  { href: "/member/report-hours", label: "Report Hours", icon: Clock },
   { href: "/member/request-event", label: "Request Event", icon: PlusCircle },
 ];
 

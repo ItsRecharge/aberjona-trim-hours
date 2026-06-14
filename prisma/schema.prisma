@@ -19,47 +19,84 @@ model User {
   emailVerifiedAt DateTime?
   createdAt       DateTime  @default(now())
 
-  signups        EventSignup[] @relation("UserSignups")
-  markedSignups  EventSignup[] @relation("MarkedBy")
-  createdEvents  Event[]       @relation("CreatedBy")
-  approvedEvents Event[]       @relation("ApprovedBy")
-  invitesCreated InviteToken[]
-  authTokens     AuthToken[]
+  signups         EventSignup[] @relation("UserSignups")
+  markedSignups   EventSignup[] @relation("MarkedBy")
+  createdEvents   Event[]       @relation("CreatedBy")
+  approvedEvents  Event[]       @relation("ApprovedBy")
+  invitesCreated  InviteToken[]
+  authTokens      AuthToken[]
+  sessions        Session[]
+  hourReports     HourReport[]  @relation("ReportOwner")
+  reviewedReports HourReport[]  @relation("ReportReviewer")
 }
 
 model Event {
   id           Int      @id @default(autoincrement())
   title        String
   description  String?
-  date         DateTime // UTC midnight; date-only semantics
   location     String?
-  hoursValue   Float    @default(1.0)
   status       String   @default("active") // "active" | "completed" | "pending_approval" | "cancelled"
   createdById  Int
   approvedById Int?
   createdAt    DateTime @default(now())
 
-  createdBy  User          @relation("CreatedBy", fields: [createdById], references: [id])
-  approvedBy User?         @relation("ApprovedBy", fields: [approvedById], references: [id])
-  signups    EventSignup[]
+  createdBy  User       @relation("CreatedBy", fields: [createdById], references: [id])
+  approvedBy User?      @relation("ApprovedBy", fields: [approvedById], references: [id])
+  timeslots  Timeslot[]
 
   @@index([status])
+}
+
+model Timeslot {
+  id          Int       @id @default(autoincrement())
+  eventId     Int
+  date        DateTime // UTC midnight; date-only semantics
+  startTime   String // "HH:MM" 24h, display only
+  endTime     String // "HH:MM" 24h, display only
+  hoursValue  Float     @default(1.0)
+  quota       Int // volunteers needed (confirmed cap)
+  completedAt DateTime? // set when an officer takes attendance for this slot
+
+  event   Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  signups EventSignup[]
+
+  @@index([eventId])
   @@index([date])
 }
 
 model EventSignup {
   id         Int      @id @default(autoincrement())
-  eventId    Int
+  timeslotId Int
   userId     Int
+  status     String   @default("confirmed") // "confirmed" | "waitlisted"
   signedUpAt DateTime @default(now())
   attended   Boolean  @default(false)
   markedById Int?
 
-  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user     User  @relation("UserSignups", fields: [userId], references: [id])
-  markedBy User? @relation("MarkedBy", fields: [markedById], references: [id])
+  timeslot Timeslot @relation(fields: [timeslotId], references: [id], onDelete: Cascade)
+  user     User     @relation("UserSignups", fields: [userId], references: [id])
+  markedBy User?    @relation("MarkedBy", fields: [markedById], references: [id])
 
-  @@unique([eventId, userId])
+  @@unique([timeslotId, userId])
+}
+
+model HourReport {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  description    String
+  notes          String?
+  date           DateTime // UTC midnight; the activity date
+  hoursRequested Float
+  status         String    @default("pending") // "pending" | "approved" | "denied"
+  reviewedById   Int?
+  reviewedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  user       User  @relation("ReportOwner", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ReportReviewer", fields: [reviewedById], references: [id])
+
+  @@index([status])
+  @@index([userId])
 }
 
 model InviteToken {
@@ -88,4 +125,19 @@ model AuthToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     Int
+  tokenHash  String    @unique // sha256 of the random session secret in the cookie
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  userAgent  String?
+  lastUsedAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

@@ -3,11 +3,11 @@
 import { redirect } from "next/navigation";
 import { loginSchema } from "@/lib/validation";
 import { verifyCredentials } from "@/lib/services/auth-service";
-import { createSession, destroySession } from "@/lib/session";
+import { createSession, destroySession, destroyAllSessions } from "@/lib/session";
 import { setFlash } from "@/lib/flash";
 import { rateLimit } from "@/lib/rate-limit";
 import { requestIp } from "@/lib/request-ip";
-import { fullName } from "@/lib/current-user";
+import { fullName, getCurrentUser } from "@/lib/current-user";
 import type { Role } from "@/lib/constants";
 
 export interface AuthFormState {
@@ -60,5 +60,12 @@ export async function loginAction(
 export async function logoutAction(): Promise<void> {
   await destroySession();
   await setFlash("info", "You have been logged out.");
+  redirect("/");
+}
+
+export async function logoutEverywhereAction(): Promise<void> {
+  const user = await getCurrentUser();
+  if (user) await destroyAllSessions(user.id);
+  await setFlash("info", "Logged out on all devices.");
   redirect("/");
 }

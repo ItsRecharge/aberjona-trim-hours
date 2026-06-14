@@ -2,7 +2,7 @@ import { requireUser } from "@/lib/current-user";
 import { listActiveEventsForMember } from "@/lib/services/event-service";
 import { signupAction, withdrawAction } from "@/actions/signups";
 import { SubmitButton } from "@/components/SubmitButton";
-import { formatEventDate } from "@/lib/format";
+import { formatSlot } from "@/lib/format";
 
 export default async function MemberEventsPage() {
   const user = await requireUser("member");
@@ -18,40 +18,65 @@ export default async function MemberEventsPage() {
         </p>
       ) : (
         <ul className="space-y-4">
-          {events.map((event) => {
-            const signedUp = event.signups.length > 0;
-            return (
-              <li
-                key={event.id}
-                className="flex flex-col gap-3 rounded-xl bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="text-lg font-semibold text-gray-900">{event.title}</p>
-                  <p className="text-sm text-gray-500">
-                    {formatEventDate(event.date)}
-                    {event.location ? ` · ${event.location}` : ""} · {event.hoursValue}{" "}
-                    hrs
-                  </p>
-                  {event.description && (
-                    <p className="mt-1 text-sm text-gray-600">{event.description}</p>
-                  )}
-                </div>
-                <form action={signedUp ? withdrawAction : signupAction}>
-                  <input type="hidden" name="eventId" value={event.id} />
-                  {signedUp ? (
-                    <button
-                      type="submit"
-                      className="cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+          {events.map((event) => (
+            <li key={event.id} className="rounded-xl bg-white p-5 shadow-sm">
+              <p className="text-lg font-semibold text-gray-900">{event.title}</p>
+              {event.location && (
+                <p className="text-sm text-gray-500">{event.location}</p>
+              )}
+              {event.description && (
+                <p className="mt-1 text-sm text-gray-600">{event.description}</p>
+              )}
+
+              <ul className="mt-3 divide-y divide-gray-100">
+                {event.timeslots.map((slot) => {
+                  const confirmed = slot.signups.filter(
+                    (s) => s.status === "confirmed",
+                  ).length;
+                  const mine = slot.signups.find((s) => s.userId === user.id);
+                  const isFull = confirmed >= slot.quota;
+
+                  return (
+                    <li
+                      key={slot.id}
+                      className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      Withdraw
-                    </button>
-                  ) : (
-                    <SubmitButton pendingText="Signing up…">Sign Up</SubmitButton>
-                  )}
-                </form>
-              </li>
-            );
-          })}
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {formatSlot(slot)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {slot.hoursValue} hrs · {confirmed}/{slot.quota} filled
+                          {isFull && !mine ? " · full" : ""}
+                          {mine?.status === "waitlisted" ? " · you're waitlisted" : ""}
+                          {mine?.status === "confirmed" ? " · you're in" : ""}
+                        </p>
+                      </div>
+
+                      {mine ? (
+                        <form action={withdrawAction}>
+                          <input type="hidden" name="timeslotId" value={slot.id} />
+                          <button
+                            type="submit"
+                            className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                          >
+                            {mine.status === "waitlisted" ? "Leave waitlist" : "Withdraw"}
+                          </button>
+                        </form>
+                      ) : (
+                        <form action={signupAction}>
+                          <input type="hidden" name="timeslotId" value={slot.id} />
+                          <SubmitButton pendingText="…">
+                            {isFull ? "Join waitlist" : "Sign up"}
+                          </SubmitButton>
+                        </form>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          ))}
         </ul>
       )}
     </div>

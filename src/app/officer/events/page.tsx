@@ -4,7 +4,7 @@ import { listEvents } from "@/lib/services/event-service";
 import { createEventAction } from "@/actions/events";
 import { EventFormFields } from "@/components/forms/EventForm";
 import { StatusBadge } from "@/components/StatusBadge";
-import { formatEventDate } from "@/lib/format";
+import { formatSlot } from "@/lib/format";
 
 export default async function OfficerEventsPage() {
   await requireUser("officer");
@@ -33,8 +33,7 @@ export default async function OfficerEventsPage() {
             <thead className="bg-gray-50 text-left text-xs text-gray-500 uppercase">
               <tr>
                 <th className="px-6 py-3">Event</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3 text-center">Signups</th>
+                <th className="px-6 py-3">Timeslots</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3 text-right">Action</th>
               </tr>
@@ -42,18 +41,34 @@ export default async function OfficerEventsPage() {
             <tbody className="divide-y divide-gray-100">
               {events.map((e) => (
                 <tr key={e.id}>
-                  <td className="px-6 py-3">
+                  <td className="px-6 py-3 align-top">
                     <p className="font-medium text-gray-900">{e.title}</p>
-                    <p className="text-xs text-gray-500">{e.hoursValue} hrs</p>
                   </td>
-                  <td className="px-6 py-3 text-gray-600">{formatEventDate(e.date)}</td>
-                  <td className="px-6 py-3 text-center text-gray-600">
-                    {e._count.signups}
+                  <td className="px-6 py-3 text-gray-600">
+                    <ul className="space-y-1">
+                      {e.timeslots.map((slot) => {
+                        const confirmed = slot.signups.filter(
+                          (s) => s.status === "confirmed",
+                        ).length;
+                        const waiting = slot.signups.filter(
+                          (s) => s.status === "waitlisted",
+                        ).length;
+                        return (
+                          <li key={slot.id} className="text-xs">
+                            {formatSlot(slot)} · {slot.hoursValue} hrs ·{" "}
+                            <span className="font-medium">
+                              {confirmed}/{slot.quota}
+                            </span>
+                            {waiting > 0 ? ` (+${waiting} waitlisted)` : ""}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </td>
-                  <td className="px-6 py-3">
+                  <td className="px-6 py-3 align-top">
                     <StatusBadge status={e.status} />
                   </td>
-                  <td className="px-6 py-3 text-right">
+                  <td className="px-6 py-3 text-right align-top">
                     {(e.status === "active" || e.status === "completed") && (
                       <Link
                         href={`/officer/events/${e.id}/attendance`}

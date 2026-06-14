@@ -5,17 +5,22 @@ beforeAll(() => {
   process.env.SESSION_SECRET = "test-secret-at-least-16-chars";
 });
 
-describe("session tokens", () => {
-  it("round-trips a session payload", async () => {
-    const token = await signSessionToken({ userId: 42, role: "officer", name: "Pat" });
-    const session = await verifySessionToken(token);
-    expect(session).toEqual({ userId: 42, role: "officer", name: "Pat" });
+const claims = {
+  sid: "sess_123",
+  secret: "raw-session-secret",
+  role: "officer" as const,
+  name: "Pat",
+};
+
+describe("session token envelope", () => {
+  it("round-trips the session claims", async () => {
+    const token = await signSessionToken(claims);
+    expect(await verifySessionToken(token)).toEqual(claims);
   });
 
   it("rejects tampered tokens", async () => {
-    const token = await signSessionToken({ userId: 1, role: "member", name: "M" });
-    const tampered = token.slice(0, -2) + "xx";
-    expect(await verifySessionToken(tampered)).toBeNull();
+    const token = await signSessionToken(claims);
+    expect(await verifySessionToken(token.slice(0, -2) + "xx")).toBeNull();
   });
 
   it("rejects garbage", async () => {
@@ -23,7 +28,7 @@ describe("session tokens", () => {
   });
 
   it("rejects tokens signed with a different secret", async () => {
-    const token = await signSessionToken({ userId: 1, role: "member", name: "M" });
+    const token = await signSessionToken(claims);
     process.env.SESSION_SECRET = "another-secret-16-chars-long";
     expect(await verifySessionToken(token)).toBeNull();
     process.env.SESSION_SECRET = "test-secret-at-least-16-chars";

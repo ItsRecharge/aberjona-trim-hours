@@ -66,16 +66,16 @@ export function inviteEmail(link: string, expiresAt: Date): EmailContent {
   };
 }
 
-export function eventPostedEmail(eventTitle: string, dateLabel: string, hours: number): EmailContent {
+export function eventPostedEmail(eventTitle: string, whenLabel: string): EmailContent {
   const url = `${appUrl()}/member/events`;
   return {
     subject: `New volunteer event: ${eventTitle}`,
     html: layout(
       `New event posted`,
-      `<p><strong>${eventTitle}</strong> is now open for sign-ups.</p><p>Date: ${dateLabel}<br>Hours: ${hours}</p>`,
+      `<p><strong>${eventTitle}</strong> is now open for sign-ups.</p><p>When: ${whenLabel}</p>`,
       { label: "View &amp; Sign Up", url },
     ),
-    text: `New event posted: ${eventTitle}\nDate: ${dateLabel}\nHours: ${hours}\n\nSign up: ${url}`,
+    text: `New event posted: ${eventTitle}\nWhen: ${whenLabel}\n\nSign up: ${url}`,
   };
 }
 
@@ -133,4 +133,49 @@ export function newRequestEmail(eventTitle: string, requesterName: string): Emai
     ),
     text: `${requesterName} requested a new event: ${eventTitle}\nReview: ${url}`,
   };
+}
+
+export function waitlistPromotedEmail(
+  name: string,
+  eventTitle: string,
+  slotLabel: string,
+): EmailContent {
+  const url = `${appUrl()}/member/events`;
+  return {
+    subject: `A spot opened up: ${eventTitle}`,
+    html: layout(
+      `You're off the waitlist`,
+      `<p>Hi ${name}, a spot opened up and you're now <strong>confirmed</strong> for <strong>${eventTitle}</strong> (${slotLabel}).</p>`,
+      { label: "View Event", url },
+    ),
+    text: `Hi ${name}, you're now confirmed for ${eventTitle} (${slotLabel}).\n${url}`,
+  };
+}
+
+export function hourReportDecisionEmail(
+  name: string,
+  description: string,
+  hours: number,
+  approved: boolean,
+): EmailContent {
+  const url = `${appUrl()}/member/report-hours`;
+  return approved
+    ? {
+        subject: `Your hour report was approved (${hours} hrs)`,
+        html: layout(
+          `Hours approved`,
+          `<p>Hi ${name}, your reported hours for <strong>${description}</strong> were approved and <strong>${hours} hour${hours === 1 ? "" : "s"}</strong> added to your total.</p>`,
+          { label: "View Your Reports", url },
+        ),
+        text: `Hi ${name}, your report "${description}" was approved (${hours} hrs).\n${url}`,
+      }
+    : {
+        subject: `Update on your hour report`,
+        html: layout(
+          `Hours not approved`,
+          `<p>Hi ${name}, your reported hours for <strong>${description}</strong> were not approved. Reach out to an officer with questions.</p>`,
+          { label: "View Your Reports", url },
+        ),
+        text: `Hi ${name}, your report "${description}" was not approved.\n${url}`,
+      };
 }

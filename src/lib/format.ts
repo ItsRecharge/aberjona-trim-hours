@@ -8,3 +8,12 @@ export function formatEventDate(date: Date): string {
     year: "numeric",
   });
 }
+
+/** Short label for a timeslot, e.g. "Sat, May 3 · 9:00–11:00". */
+export function formatSlot(slot: {
+  date: Date;
+  startTime: string;
+  endTime: string;
+}): string {
+  return `${formatEventDate(slot.date)} · ${slot.startTime}–${slot.endTime}`;
+}

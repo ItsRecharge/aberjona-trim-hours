@@ -15,6 +15,12 @@ export type EventStatus = (typeof EVENT_STATUSES)[number];
 export const TOKEN_TYPES = ["email_verification", "password_reset"] as const;
 export type TokenType = (typeof TOKEN_TYPES)[number];
 
+export const SIGNUP_STATUSES = ["confirmed", "waitlisted"] as const;
+export type SignupStatus = (typeof SIGNUP_STATUSES)[number];
+
+export const REPORT_STATUSES = ["pending", "approved", "denied"] as const;
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
+
 export const SESSION_COOKIE = "trim_session";
 export const FLASH_COOKIE = "trim_flash";
 

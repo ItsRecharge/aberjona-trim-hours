@@ -3,9 +3,11 @@ import { fullName } from "@/lib/current-user";
 import { sendMail } from "./mailer";
 import {
   eventPostedEmail,
+  hourReportDecisionEmail,
   hoursCreditedEmail,
   newRequestEmail,
   requestDecisionEmail,
+  waitlistPromotedEmail,
 } from "./templates";
 
 const BCC_CHUNK = 80; // stay well under Gmail's ~500 recipients/day per blast
@@ -45,13 +47,16 @@ function dateLabel(date: Date): string {
 
 export async function notifyEventPosted(event: {
   title: string;
-  date: Date;
-  hoursValue: number;
+  slots: { date: Date; startTime: string; endTime: string }[];
 }): Promise<void> {
   await safeSend(async () => {
     const recipients = await verifiedEmailsByRole("member");
     if (recipients.length === 0) return;
-    const content = eventPostedEmail(event.title, dateLabel(event.date), event.hoursValue);
+    const whenLabel =
+      event.slots.length === 1
+        ? `${dateLabel(event.slots[0].date)}, ${event.slots[0].startTime}–${event.slots[0].endTime}`
+        : `${event.slots.length} timeslots starting ${dateLabel(event.slots[0].date)}`;
+    const content = eventPostedEmail(event.title, whenLabel);
     for (const group of chunk(recipients, BCC_CHUNK)) {
       await sendMail({ bcc: group, ...content });
     }
@@ -96,5 +101,39 @@ export async function notifyNewRequest(
     for (const group of chunk(recipients, BCC_CHUNK)) {
       await sendMail({ bcc: group, ...content });
     }
+  });
+}
+
+export async function notifyWaitlistPromoted(
+  userIds: number[],
+  eventTitle: string,
+  slotLabel: string,
+): Promise<void> {
+  if (userIds.length === 0) return;
+  await safeSend(async () => {
+    for (const id of userIds) {
+      const user = await db.user.findUnique({ where: { id } });
+      if (!user?.emailVerifiedAt) continue;
+      await sendMail({
+        to: user.email,
+        ...waitlistPromotedEmail(fullName(user), eventTitle, slotLabel),
+      });
+    }
+  });
+}
+
+export async function notifyHourReportDecision(
+  userId: number,
+  description: string,
+  hours: number,
+  approved: boolean,
+): Promise<void> {
+  await safeSend(async () => {
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user?.emailVerifiedAt) return;
+    await sendMail({
+      to: user.email,
+      ...hourReportDecisionEmail(fullName(user), description, hours, approved),
+    });
   });
 }
