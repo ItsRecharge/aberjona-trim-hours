@@ -1,0 +1,91 @@
+// SQLite for local dev. To move to Postgres: change provider, set DATABASE_URL,
+// and convert the String role/status/type columns to native enums.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  firstName       String
+  lastName        String
+  email           String    @unique // stored lowercased
+  passwordHash    String
+  role            String    @default("member") // "member" | "officer"
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+
+  signups        EventSignup[] @relation("UserSignups")
+  markedSignups  EventSignup[] @relation("MarkedBy")
+  createdEvents  Event[]       @relation("CreatedBy")
+  approvedEvents Event[]       @relation("ApprovedBy")
+  invitesCreated InviteToken[]
+  authTokens     AuthToken[]
+}
+
+model Event {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  date         DateTime // UTC midnight; date-only semantics
+  location     String?
+  hoursValue   Float    @default(1.0)
+  status       String   @default("active") // "active" | "completed" | "pending_approval" | "cancelled"
+  createdById  Int
+  approvedById Int?
+  createdAt    DateTime @default(now())
+
+  createdBy  User          @relation("CreatedBy", fields: [createdById], references: [id])
+  approvedBy User?         @relation("ApprovedBy", fields: [approvedById], references: [id])
+  signups    EventSignup[]
+
+  @@index([status])
+  @@index([date])
+}
+
+model EventSignup {
+  id         Int      @id @default(autoincrement())
+  eventId    Int
+  userId     Int
+  signedUpAt DateTime @default(now())
+  attended   Boolean  @default(false)
+  markedById Int?
+
+  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user     User  @relation("UserSignups", fields: [userId], references: [id])
+  markedBy User? @relation("MarkedBy", fields: [markedById], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model InviteToken {
+  id          Int       @id @default(autoincrement())
+  tokenHash   String    @unique // sha256 of the raw token; raw is shown once
+  createdById Int
+  role        String    @default("member") // role granted on signup
+  expiresAt   DateTime
+  maxUses     Int? // null = unlimited until expiry
+  useCount    Int       @default(0)
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  createdBy User @relation(fields: [createdById], references: [id])
+}
+
+model AuthToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String // "email_verification" | "password_reset"
+  tokenHash String    @unique
+  expiresAt DateTime // verification: 48h, reset: 1h
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}

@@ -1,0 +1,23 @@
+// SQLite (via Prisma) has no native enums, so these const unions are the
+// source of truth for the String columns in prisma/schema.prisma.
+
+export const ROLES = ["member", "officer"] as const;
+export type Role = (typeof ROLES)[number];
+
+export const EVENT_STATUSES = [
+  "active",
+  "completed",
+  "pending_approval",
+  "cancelled",
+] as const;
+export type EventStatus = (typeof EVENT_STATUSES)[number];
+
+export const TOKEN_TYPES = ["email_verification", "password_reset"] as const;
+export type TokenType = (typeof TOKEN_TYPES)[number];
+
+export const SESSION_COOKIE = "trim_session";
+export const FLASH_COOKIE = "trim_flash";
+
+export const VERIFICATION_TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48h
+export const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1h
+export const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
