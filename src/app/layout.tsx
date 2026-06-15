@@ -12,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col">
+      <body className="flex min-h-screen flex-col" suppressHydrationWarning>
         <div className="flex-1">{children}</div>
         <footer className="bg-white py-3 text-center text-sm text-gray-500">
           Made by Neel Bansal
