@@ -8,6 +8,7 @@ import { inviteSchema } from "@/lib/validation";
 import { createInvite, revokeInvite } from "@/lib/services/invite-service";
 import { sendMail } from "@/lib/email/mailer";
 import { inviteEmail } from "@/lib/email/templates";
+import { recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
 
 export async function createInviteAction(formData: FormData): Promise<void> {
@@ -43,6 +44,14 @@ export async function createInviteAction(formData: FormData): Promise<void> {
     await setFlash("success", "Invite link created — copy it below to share.");
   }
 
+  await recordAudit({
+    actor: officer,
+    action: "invite.create",
+    summary: `Created a ${parsed.data.role} invite${sendTo ? ` for ${sendTo}` : ""}`,
+    targetType: "invite",
+    targetId: invite.id,
+  });
+
   // The raw link is shown once via a short-lived cookie, then cleared.
   const { cookies } = await import("next/headers");
   (await cookies()).set("trim_last_invite", link, {
@@ -56,10 +65,17 @@ export async function createInviteAction(formData: FormData): Promise<void> {
 }
 
 export async function revokeInviteAction(formData: FormData): Promise<void> {
-  await requireUser("officer");
+  const officer = await requireUser("officer");
   const id = Number(formData.get("inviteId"));
   if (Number.isInteger(id)) {
     await revokeInvite(id);
+    await recordAudit({
+      actor: officer,
+      action: "invite.revoke",
+      summary: `Revoked invite #${id}`,
+      targetType: "invite",
+      targetId: id,
+    });
     await setFlash("info", "Invite revoked.");
   }
   revalidatePath("/officer/invites");

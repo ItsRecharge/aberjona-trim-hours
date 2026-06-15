@@ -32,16 +32,5 @@ export function getEnv(): Env {
   return cached;
 }
 
-export function isMailConfigured(): boolean {
-  const env = getEnv();
-  return Boolean(env.GMAIL_USER && env.GMAIL_APP_PASSWORD);
-}
-
-export function isSheetsConfigured(): boolean {
-  const env = getEnv();
-  return Boolean(
-    env.GOOGLE_SHEETS_SPREADSHEET_ID &&
-      env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
-      env.GOOGLE_SERVICE_ACCOUNT_KEY,
-  );
-}
+// Integration config (mail/Sheets) now lives in integration-service, which reads
+// DB config with these env vars as fallback.

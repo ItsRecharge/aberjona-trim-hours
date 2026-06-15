@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/current-user";
 import { chapterSettingsSchema } from "@/lib/validation";
 import { updateChapterSettings } from "@/lib/services/chapter-service";
+import { recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
 
 export async function updateChapterAction(formData: FormData): Promise<void> {
-  await requireUser("officer");
+  const officer = await requireUser("officer");
   const parsed = chapterSettingsSchema.safeParse({
     chapterName: formData.get("chapterName"),
     yearlyHoursGoal: formData.get("yearlyHoursGoal"),
@@ -19,6 +20,11 @@ export async function updateChapterAction(formData: FormData): Promise<void> {
   }
 
   await updateChapterSettings(parsed.data);
+  await recordAudit({
+    actor: officer,
+    action: "chapter.settings",
+    summary: `Updated chapter settings (goal ${parsed.data.yearlyHoursGoal} hrs)`,
+  });
   await setFlash("success", "Chapter settings updated.");
   revalidatePath("/officer/chapter");
   redirect("/officer/chapter");

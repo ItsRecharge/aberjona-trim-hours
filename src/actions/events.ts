@@ -26,6 +26,7 @@ import {
   notifyRequestDecision,
   notifyWaitlistPromoted,
 } from "@/lib/email/notify";
+import { recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
 import type { z } from "zod";
 
@@ -76,6 +77,13 @@ export async function createEventAction(formData: FormData): Promise<void> {
   const event = await createEvent(parsed.data, officer.id);
   const slots = await eventSlots(event.id);
   after(() => notifyEventPosted({ title: event.title, slots }));
+  await recordAudit({
+    actor: officer,
+    action: "event.create",
+    summary: `Created event "${event.title}"`,
+    targetType: "event",
+    targetId: event.id,
+  });
 
   await setFlash("success", `Event "${event.title}" created and members notified.`);
   revalidatePath("/officer/events");
@@ -110,6 +118,13 @@ export async function approveRequestAction(formData: FormData): Promise<void> {
       await notifyRequestDecision(requesterId, event.title, true);
       await notifyEventPosted({ title: event.title, slots });
     });
+    await recordAudit({
+      actor: officer,
+      action: "event.approve",
+      summary: `Approved request "${event.title}"`,
+      targetType: "event",
+      targetId: event.id,
+    });
     await setFlash("success", `Approved "${event.title}". Members have been notified.`);
   } else {
     await setFlash("warning", "That request could not be approved.");
@@ -120,13 +135,20 @@ export async function approveRequestAction(formData: FormData): Promise<void> {
 }
 
 export async function denyRequestAction(formData: FormData): Promise<void> {
-  await requireUser("officer");
+  const officer = await requireUser("officer");
   const eventId = Number(formData.get("eventId"));
 
   const event = await denyRequest(eventId);
   if (event) {
     const requesterId = event.createdById;
     after(() => notifyRequestDecision(requesterId, event.title, false));
+    await recordAudit({
+      actor: officer,
+      action: "event.deny",
+      summary: `Denied request "${event.title}"`,
+      targetType: "event",
+      targetId: event.id,
+    });
     await setFlash("info", `Denied "${event.title}".`);
   } else {
     await setFlash("warning", "That request could not be denied.");
@@ -154,7 +176,7 @@ function parseSlot(raw: {
 }
 
 export async function editEventAction(formData: FormData): Promise<void> {
-  await requireUser("officer");
+  const officer = await requireUser("officer");
   const eventId = Number(formData.get("eventId"));
   const editPath = `/officer/events/${eventId}/edit`;
 
@@ -237,6 +259,13 @@ export async function editEventAction(formData: FormData): Promise<void> {
       notifyWaitlistPromoted(promoted, title, "an updated timeslot"),
     );
   }
+  await recordAudit({
+    actor: officer,
+    action: "event.edit",
+    summary: `Edited event "${title}"`,
+    targetType: "event",
+    targetId: eventId,
+  });
 
   await setFlash("success", `Updated "${title}".`);
   revalidatePath("/officer/events");
@@ -244,13 +273,20 @@ export async function editEventAction(formData: FormData): Promise<void> {
 }
 
 export async function cancelEventAction(formData: FormData): Promise<void> {
-  await requireUser("officer");
+  const officer = await requireUser("officer");
   const eventId = Number(formData.get("eventId"));
 
   const event = await db.event.findUnique({ where: { id: eventId } });
   const affected = await cancelEvent(eventId);
   if (affected && event) {
     after(() => notifyEventCancelled(affected, event.title));
+    await recordAudit({
+      actor: officer,
+      action: "event.cancel",
+      summary: `Cancelled event "${event.title}" (${affected.length} signed up)`,
+      targetType: "event",
+      targetId: eventId,
+    });
     await setFlash("info", `Cancelled "${event.title}". Signed-up members were notified.`);
   } else {
     await setFlash("warning", "That event could not be cancelled.");
@@ -261,9 +297,17 @@ export async function cancelEventAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteEventAction(formData: FormData): Promise<void> {
-  await requireUser("officer");
+  const officer = await requireUser("officer");
   const eventId = Number(formData.get("eventId"));
+  const event = await db.event.findUnique({ where: { id: eventId } });
   await deleteEvent(eventId);
+  await recordAudit({
+    actor: officer,
+    action: "event.delete",
+    summary: `Deleted event "${event?.title ?? eventId}"`,
+    targetType: "event",
+    targetId: eventId,
+  });
   await setFlash("info", "Event deleted.");
   revalidatePath("/officer/events");
   redirect("/officer/events");

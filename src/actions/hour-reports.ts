@@ -10,6 +10,7 @@ import {
   reviewReport,
 } from "@/lib/services/hour-report-service";
 import { notifyHourReportDecision } from "@/lib/email/notify";
+import { recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
 import { rateLimit } from "@/lib/rate-limit";
 import { requestIp } from "@/lib/request-ip";
@@ -54,6 +55,13 @@ async function reviewAction(formData: FormData, approve: boolean): Promise<void>
         approve,
       ),
     );
+    await recordAudit({
+      actor: officer,
+      action: approve ? "report.approve" : "report.deny",
+      summary: `${approve ? "Approved" : "Denied"} ${report.hoursRequested} hrs for ${report.user.firstName} ("${report.description}")`,
+      targetType: "report",
+      targetId: report.id,
+    });
     await setFlash(
       approve ? "success" : "info",
       approve

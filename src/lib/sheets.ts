@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { getEnv, isSheetsConfigured } from "./env";
+import { getSheetsConfig } from "./services/integration-service";
 
 export interface HoursRow {
   memberName: string;
@@ -10,24 +10,15 @@ export interface HoursRow {
 
 let warned = false;
 
-function decodeKey(raw: string): string {
-  // Accept either base64-encoded or raw (with literal \n) private keys.
-  try {
-    const decoded = Buffer.from(raw, "base64").toString("utf8");
-    if (decoded.includes("PRIVATE KEY")) return decoded;
-  } catch {
-    /* fall through */
-  }
-  return raw.replace(/\\n/g, "\n");
-}
-
 /**
  * Appends credited-hours rows to the configured Google Sheet. No-ops (with one
  * log line) when Sheets isn't configured, and never throws into the caller.
+ * Reads config from the DB (officer-editable) with env fallback.
  */
 export async function appendHoursRows(rows: HoursRow[]): Promise<void> {
   if (rows.length === 0) return;
-  if (!isSheetsConfigured()) {
+  const config = await getSheetsConfig();
+  if (!config) {
     if (!warned) {
       console.warn("[sheets] Google Sheets not configured — hours backup is a no-op.");
       warned = true;
@@ -36,16 +27,15 @@ export async function appendHoursRows(rows: HoursRow[]): Promise<void> {
   }
 
   try {
-    const env = getEnv();
     const auth = new google.auth.JWT({
-      email: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: decodeKey(env.GOOGLE_SERVICE_ACCOUNT_KEY!),
+      email: config.serviceEmail,
+      key: config.privateKey,
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
     const sheets = google.sheets({ version: "v4", auth });
 
     await sheets.spreadsheets.values.append({
-      spreadsheetId: env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId: config.spreadsheetId,
       range: "Sheet1!A:D",
       valueInputOption: "USER_ENTERED",
       requestBody: {

@@ -1,11 +1,15 @@
 import { db } from "@/lib/db";
 import { fullName } from "@/lib/current-user";
+import { hoursEarnedForUser } from "@/lib/services/member-service";
+import { getYearlyGoal } from "@/lib/services/chapter-service";
+import { hoursRemaining, schoolYearRange } from "@/lib/hours";
 import { sendMail } from "./mailer";
 import {
   eventCancelledEmail,
   eventPostedEmail,
   hourReportDecisionEmail,
   hoursCreditedEmail,
+  hoursSummaryEmail,
   newRequestEmail,
   requestDecisionEmail,
   waitlistPromotedEmail,
@@ -87,6 +91,46 @@ export async function notifyHoursCredited(
         to: user.email,
         ...hoursCreditedEmail(fullName(user), c.hours, c.eventTitle),
       });
+    }
+  });
+}
+
+/**
+ * Officer-triggered: emails every verified, active member a personalized hours
+ * summary (earned / remaining vs the chapter goal) as an end-of-year reminder.
+ * Each send is isolated so one bad address doesn't abort the batch.
+ */
+export async function notifyHoursSummary(): Promise<void> {
+  await safeSend(async () => {
+    const goal = await getYearlyGoal();
+    const { end } = schoolYearRange();
+    const deadline = end.toLocaleDateString("en-US", {
+      timeZone: "UTC",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const members = await db.user.findMany({
+      where: { role: "member", emailVerifiedAt: { not: null }, deactivatedAt: null },
+    });
+
+    for (const m of members) {
+      try {
+        const earned = await hoursEarnedForUser(m.id);
+        await sendMail({
+          to: m.email,
+          ...hoursSummaryEmail(
+            fullName(m),
+            earned,
+            hoursRemaining(earned, goal),
+            goal,
+            deadline,
+          ),
+        });
+      } catch (err) {
+        console.error(`[notify] hours summary to ${m.email} failed:`, err);
+      }
     }
   });
 }

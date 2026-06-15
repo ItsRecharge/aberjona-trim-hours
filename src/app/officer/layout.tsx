@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, Wrench } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { getFlash } from "@/lib/flash";
 import { FlashMessages } from "@/components/FlashMessages";
@@ -34,6 +34,13 @@ export default async function OfficerLayout({
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/officer/admin"
+            className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
+          >
+            <Wrench className="h-4 w-4" />
+            Admin
+          </Link>
         </nav>
         <div className="border-t border-white/10 px-5 py-4">
           <p className="mb-2 text-xs text-white/60">{fullName(user)}</p>

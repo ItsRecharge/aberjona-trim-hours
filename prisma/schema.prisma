@@ -137,6 +137,29 @@ model ChapterSettings {
   updatedAt       DateTime @updatedAt
 }
 
+model IntegrationSettings {
+  id                  Int      @id @default(1) // singleton row
+  gmailUser           String?
+  gmailAppPasswordEnc String? // AES-GCM ciphertext
+  sheetsSpreadsheetId String?
+  sheetsServiceEmail  String?
+  sheetsPrivateKeyEnc String? // AES-GCM ciphertext
+  updatedAt           DateTime @updatedAt
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int // officer's user id (no FK so it survives deletion)
+  actorName  String // denormalized name snapshot
+  action     String // e.g. "event.create", "roster.deactivate"
+  summary    String // human-readable
+  targetType String?
+  targetId   Int?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model Session {
   id         String    @id @default(cuid())
   userId     Int

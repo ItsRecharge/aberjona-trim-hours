@@ -135,6 +135,36 @@ export function hoursCreditedEmail(
   };
 }
 
+export function hoursSummaryEmail(
+  name: string,
+  earned: number,
+  remaining: number,
+  goal: number,
+  deadlineLabel: string,
+): EmailContent {
+  const url = `${appUrl()}/member/events`;
+  if (remaining <= 0) {
+    return {
+      subject: "You've completed your service hours 🎉",
+      html: layout(
+        `You're all set, ${name}!`,
+        `<p>You've earned <strong>${earned} of ${goal}</strong> service hours this year — goal met. Thank you for your service!</p>`,
+        { label: "View Your Hours", url: `${appUrl()}/member/dashboard` },
+      ),
+      text: `You're all set, ${name}! You've earned ${earned} of ${goal} hours — goal met. Thank you!`,
+    };
+  }
+  return {
+    subject: `Service hours reminder — ${remaining} to go`,
+    html: layout(
+      `Hours reminder for ${name}`,
+      `<p>You've earned <strong>${earned} of ${goal}</strong> service hours so far. You still need <strong>${remaining} more</strong> before <strong>${deadlineLabel}</strong>.</p><p>Browse upcoming events to sign up and finish your hours.</p>`,
+      { label: "Find Events", url },
+    ),
+    text: `Hi ${name}, you've earned ${earned} of ${goal} hours. You need ${remaining} more before ${deadlineLabel}.\nFind events: ${url}`,
+  };
+}
+
 export function newRequestEmail(eventTitle: string, requesterName: string): EmailContent {
   const url = `${appUrl()}/officer/requests`;
   return {

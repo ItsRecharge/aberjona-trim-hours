@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Mail, Settings } from "lucide-react";
 import { requireUser } from "@/lib/current-user";
 import { listMembersWithProgress } from "@/lib/services/member-service";
 import { getYearlyGoal } from "@/lib/services/chapter-service";
+import { sendHoursSummaryAction } from "@/actions/reminders";
 import { ProgressBar } from "@/components/ProgressBar";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function OfficerDashboard() {
   await requireUser("officer");
@@ -23,13 +25,23 @@ export default async function OfficerDashboard() {
             {members.length} members · {atRisk} still working toward {goal} hrs
           </p>
         </div>
-        <Link
-          href="/officer/chapter"
-          className="flex items-center gap-1.5 text-sm font-medium text-indigo-700 hover:underline"
-        >
-          <Settings className="h-4 w-4" />
-          Chapter settings
-        </Link>
+        <div className="flex items-center gap-4">
+          <form action={sendHoursSummaryAction}>
+            <SubmitButton pendingText="Sending…">
+              <span className="flex items-center gap-1.5">
+                <Mail className="h-4 w-4" />
+                Email hours reminder
+              </span>
+            </SubmitButton>
+          </form>
+          <Link
+            href="/officer/admin"
+            className="flex items-center gap-1.5 text-sm font-medium text-indigo-700 hover:underline"
+          >
+            <Settings className="h-4 w-4" />
+            Admin
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">

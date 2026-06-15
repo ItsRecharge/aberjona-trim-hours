@@ -7,6 +7,7 @@ import { requireUser, fullName } from "@/lib/current-user";
 import { markSlotAttendance } from "@/lib/services/attendance-service";
 import { db } from "@/lib/db";
 import { notifyHoursCredited } from "@/lib/email/notify";
+import { recordAudit } from "@/lib/services/audit-service";
 import { appendHoursRows } from "@/lib/sheets";
 import { setFlash } from "@/lib/flash";
 
@@ -47,6 +48,14 @@ export async function markAttendanceAction(formData: FormData): Promise<void> {
       );
     });
   }
+
+  await recordAudit({
+    actor: officer,
+    action: "attendance.mark",
+    summary: `Recorded attendance for "${result.eventTitle}" (${result.credited.length} credited)`,
+    targetType: "timeslot",
+    targetId: timeslotId,
+  });
 
   await setFlash(
     "success",
