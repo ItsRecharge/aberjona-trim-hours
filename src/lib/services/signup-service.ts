@@ -22,6 +22,7 @@ export async function signupWithInvite(params: {
   lastName: string;
   email: string;
   password: string;
+  graduationYear?: number;
   rawInviteToken: string;
 }): Promise<SignupResult> {
   const passwordHash = await hashPassword(params.password);
@@ -44,6 +45,7 @@ export async function signupWithInvite(params: {
           lastName: params.lastName,
           email: params.email,
           passwordHash,
+          graduationYear: params.graduationYear ?? null,
           role: invite.role as Role,
         },
       });

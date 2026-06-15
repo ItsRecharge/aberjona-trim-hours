@@ -5,17 +5,26 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { requireUser, fullName } from "@/lib/current-user";
 import { db } from "@/lib/db";
-import { eventSchema, eventRequestSchema } from "@/lib/validation";
+import { eventSchema, eventRequestSchema, timeslotSchema } from "@/lib/validation";
 import {
+  addTimeslots,
   approveRequest,
+  cancelEvent,
+  cancelOwnRequest,
   createEvent,
+  deleteEvent,
+  deleteTimeslot,
   denyRequest,
   requestEvent,
+  updateEventMeta,
+  updateTimeslot,
 } from "@/lib/services/event-service";
 import {
+  notifyEventCancelled,
   notifyEventPosted,
   notifyNewRequest,
   notifyRequestDecision,
+  notifyWaitlistPromoted,
 } from "@/lib/email/notify";
 import { setFlash } from "@/lib/flash";
 import type { z } from "zod";
@@ -125,4 +134,149 @@ export async function denyRequestAction(formData: FormData): Promise<void> {
 
   revalidatePath("/officer/requests");
   redirect("/officer/requests");
+}
+
+/** Validates a single raw slot row; returns parsed data or an error message. */
+function parseSlot(raw: {
+  date: unknown;
+  startTime: unknown;
+  endTime: unknown;
+  hoursValue: unknown;
+  quota: unknown;
+}) {
+  return timeslotSchema.safeParse({
+    date: String(raw.date ?? ""),
+    startTime: String(raw.startTime ?? ""),
+    endTime: String(raw.endTime ?? ""),
+    hoursValue: String(raw.hoursValue ?? ""),
+    quota: String(raw.quota ?? ""),
+  });
+}
+
+export async function editEventAction(formData: FormData): Promise<void> {
+  await requireUser("officer");
+  const eventId = Number(formData.get("eventId"));
+  const editPath = `/officer/events/${eventId}/edit`;
+
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) {
+    await setFlash("danger", "Title is required.");
+    redirect(editPath);
+  }
+
+  // Existing slots (parallel arrays), with a remove-checkbox set.
+  const ids = formData.getAll("existingSlotId");
+  const eDate = formData.getAll("existDate");
+  const eStart = formData.getAll("existStart");
+  const eEnd = formData.getAll("existEnd");
+  const eHours = formData.getAll("existHours");
+  const eQuota = formData.getAll("existQuota");
+  const removeIds = new Set(formData.getAll("removeSlotId").map((v) => Number(v)));
+
+  const keptIds = ids.map(Number).filter((id) => !removeIds.has(id));
+
+  // New slots from the SlotRows component.
+  const newDates = formData.getAll("slotDate");
+  const newSlots = newDates.map((d, i) => ({
+    date: d,
+    startTime: formData.getAll("slotStart")[i],
+    endTime: formData.getAll("slotEnd")[i],
+    hoursValue: formData.getAll("slotHours")[i],
+    quota: formData.getAll("slotQuota")[i],
+  }));
+
+  if (keptIds.length + newSlots.length < 1) {
+    await setFlash("danger", "An event needs at least one timeslot.");
+    redirect(editPath);
+  }
+
+  // Validate everything up front.
+  const existingParsed: { id: number; data: z.infer<typeof timeslotSchema> }[] = [];
+  for (let i = 0; i < ids.length; i++) {
+    const id = Number(ids[i]);
+    if (removeIds.has(id)) continue;
+    const parsed = parseSlot({
+      date: eDate[i],
+      startTime: eStart[i],
+      endTime: eEnd[i],
+      hoursValue: eHours[i],
+      quota: eQuota[i],
+    });
+    if (!parsed.success) {
+      await setFlash("danger", parsed.error.issues[0].message);
+      redirect(editPath);
+    }
+    existingParsed.push({ id, data: parsed.data });
+  }
+
+  const newParsed: z.infer<typeof timeslotSchema>[] = [];
+  for (const s of newSlots) {
+    const parsed = parseSlot(s);
+    if (!parsed.success) {
+      await setFlash("danger", parsed.error.issues[0].message);
+      redirect(editPath);
+    }
+    newParsed.push(parsed.data);
+  }
+
+  await updateEventMeta(eventId, {
+    title,
+    description: String(formData.get("description") ?? "").trim() || undefined,
+    location: String(formData.get("location") ?? "").trim() || undefined,
+  });
+
+  const promoted: number[] = [];
+  for (const slot of existingParsed) {
+    promoted.push(...(await updateTimeslot(slot.id, slot.data)));
+  }
+  for (const id of removeIds) await deleteTimeslot(id);
+  await addTimeslots(eventId, newParsed);
+
+  if (promoted.length > 0) {
+    after(() =>
+      notifyWaitlistPromoted(promoted, title, "an updated timeslot"),
+    );
+  }
+
+  await setFlash("success", `Updated "${title}".`);
+  revalidatePath("/officer/events");
+  redirect("/officer/events");
+}
+
+export async function cancelEventAction(formData: FormData): Promise<void> {
+  await requireUser("officer");
+  const eventId = Number(formData.get("eventId"));
+
+  const event = await db.event.findUnique({ where: { id: eventId } });
+  const affected = await cancelEvent(eventId);
+  if (affected && event) {
+    after(() => notifyEventCancelled(affected, event.title));
+    await setFlash("info", `Cancelled "${event.title}". Signed-up members were notified.`);
+  } else {
+    await setFlash("warning", "That event could not be cancelled.");
+  }
+
+  revalidatePath("/officer/events");
+  redirect("/officer/events");
+}
+
+export async function deleteEventAction(formData: FormData): Promise<void> {
+  await requireUser("officer");
+  const eventId = Number(formData.get("eventId"));
+  await deleteEvent(eventId);
+  await setFlash("info", "Event deleted.");
+  revalidatePath("/officer/events");
+  redirect("/officer/events");
+}
+
+export async function cancelRequestAction(formData: FormData): Promise<void> {
+  const member = await requireUser("member");
+  const eventId = Number(formData.get("eventId"));
+  const title = await cancelOwnRequest(eventId, member.id);
+  await setFlash(
+    title ? "info" : "warning",
+    title ? `Cancelled your request "${title}".` : "Couldn't cancel that request.",
+  );
+  revalidatePath("/member/dashboard");
+  redirect("/member/dashboard");
 }

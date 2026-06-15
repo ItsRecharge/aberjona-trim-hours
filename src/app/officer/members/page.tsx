@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/current-user";
 import { listMembersWithProgress } from "@/lib/services/member-service";
-import { formatEventDate } from "@/lib/format";
 
 export default async function OfficerMembersPage() {
   await requireUser("officer");
@@ -8,7 +8,15 @@ export default async function OfficerMembersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Member roster</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-2xl font-bold text-gray-900">Member roster</h1>
+        <a
+          href="/officer/export/members.csv"
+          className="text-sm font-medium text-indigo-700 hover:underline"
+        >
+          Export CSV
+        </a>
+      </div>
 
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">
         {members.length === 0 ? (
@@ -19,22 +27,33 @@ export default async function OfficerMembersPage() {
               <tr>
                 <th className="px-5 py-3">Name</th>
                 <th className="px-5 py-3">Email</th>
-                <th className="px-5 py-3">Joined</th>
+                <th className="px-5 py-3 text-center">Class</th>
+                <th className="px-5 py-3 text-right">Earned</th>
                 <th className="px-5 py-3">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {members.map((m) => (
-                <tr key={m.id}>
-                  <td className="px-5 py-3 font-medium text-gray-900">
-                    {m.firstName} {m.lastName}
+                <tr key={m.id} className={m.deactivatedAt ? "opacity-50" : ""}>
+                  <td className="px-5 py-3">
+                    <Link
+                      href={`/officer/members/${m.id}`}
+                      className="font-medium text-gray-900 hover:text-indigo-700 hover:underline"
+                    >
+                      {m.firstName} {m.lastName}
+                    </Link>
                   </td>
                   <td className="px-5 py-3 text-gray-600">{m.email}</td>
-                  <td className="px-5 py-3 text-gray-600">
-                    {formatEventDate(m.createdAt)}
+                  <td className="px-5 py-3 text-center text-gray-600">
+                    {m.graduationYear ?? "—"}
+                  </td>
+                  <td className="px-5 py-3 text-right font-medium text-gray-900">
+                    {m.earned}
                   </td>
                   <td className="px-5 py-3">
-                    {m.emailVerifiedAt ? (
+                    {m.deactivatedAt ? (
+                      <span className="text-xs font-medium text-gray-500">Inactive</span>
+                    ) : m.emailVerifiedAt ? (
                       <span className="text-xs font-medium text-green-700">Verified</span>
                     ) : (
                       <span className="text-xs font-medium text-yellow-700">

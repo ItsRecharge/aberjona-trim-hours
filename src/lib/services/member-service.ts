@@ -1,12 +1,15 @@
 import { db } from "../db";
 import { schoolYearRange, hoursRemaining } from "../hours";
+import { getYearlyGoal } from "./chapter-service";
 
 export interface MemberProgress {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
+  graduationYear: number | null;
   emailVerifiedAt: Date | null;
+  deactivatedAt: Date | null;
   createdAt: Date;
   earned: number;
   remaining: number;
@@ -40,23 +43,28 @@ export async function hoursEarnedForUser(userId: number): Promise<number> {
 
 /** All members with computed hours, sorted by remaining (most-needed first). */
 export async function listMembersWithProgress(): Promise<MemberProgress[]> {
-  const members = await db.user.findMany({
-    where: { role: "member" },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      emailVerifiedAt: true,
-      createdAt: true,
-    },
-    orderBy: { firstName: "asc" },
-  });
+  const [members, goal] = await Promise.all([
+    db.user.findMany({
+      where: { role: "member" },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        graduationYear: true,
+        emailVerifiedAt: true,
+        deactivatedAt: true,
+        createdAt: true,
+      },
+      orderBy: { firstName: "asc" },
+    }),
+    getYearlyGoal(),
+  ]);
 
   const withHours = await Promise.all(
     members.map(async (m) => {
       const earned = await hoursEarnedForUser(m.id);
-      return { ...m, earned, remaining: hoursRemaining(earned) };
+      return { ...m, earned, remaining: hoursRemaining(earned, goal) };
     }),
   );
 

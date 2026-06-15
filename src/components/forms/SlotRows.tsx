@@ -15,9 +15,17 @@ interface Row {
  * slotStart[], slotEnd[], slotHours[], slotQuota[]) that the server action zips
  * back into slot objects. `allowMultiple` is false for member requests.
  */
-export function SlotRows({ allowMultiple = true }: { allowMultiple?: boolean }) {
-  const [rows, setRows] = useState<Row[]>([{ key: 0 }]);
-  const [nextKey, setNextKey] = useState(1);
+export function SlotRows({
+  allowMultiple = true,
+  initialRows = 1,
+}: {
+  allowMultiple?: boolean;
+  initialRows?: number;
+}) {
+  const [rows, setRows] = useState<Row[]>(() =>
+    Array.from({ length: initialRows }, (_, i) => ({ key: i })),
+  );
+  const [nextKey, setNextKey] = useState(initialRows);
 
   const add = () => {
     setRows((r) => [...r, { key: nextKey }]);

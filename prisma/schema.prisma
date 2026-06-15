@@ -14,8 +14,11 @@ model User {
   firstName       String
   lastName        String
   email           String    @unique // stored lowercased
+  pendingEmail    String? // requested new email, awaiting verification
   passwordHash    String
   role            String    @default("member") // "member" | "officer"
+  graduationYear  Int? // class year, for reporting and rollover
+  deactivatedAt   DateTime? // set when an officer removes a member; blocks login
   emailVerifiedAt DateTime?
   createdAt       DateTime  @default(now())
 
@@ -125,6 +128,13 @@ model AuthToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
+}
+
+model ChapterSettings {
+  id              Int      @id @default(1) // singleton row
+  chapterName     String   @default("Aberjona Chapter")
+  yearlyHoursGoal Float    @default(10.0)
+  updatedAt       DateTime @updatedAt
 }
 
 model Session {

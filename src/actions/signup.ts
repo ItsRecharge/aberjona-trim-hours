@@ -24,6 +24,7 @@ export async function signupAction(
     lastName: formData.get("lastName") ?? "",
     email: formData.get("email"),
     password: formData.get("password"),
+    graduationYear: formData.get("graduationYear") ?? "",
     inviteToken: formData.get("inviteToken"),
   });
   if (!parsed.success) {
@@ -35,12 +36,14 @@ export async function signupAction(
     return { error: "Too many sign-up attempts. Please try again later." };
   }
 
-  const { firstName, lastName, email, password, inviteToken } = parsed.data;
+  const { firstName, lastName, email, password, graduationYear, inviteToken } =
+    parsed.data;
   const result = await signupWithInvite({
     firstName,
     lastName,
     email,
     password,
+    graduationYear,
     rawInviteToken: inviteToken,
   });
 

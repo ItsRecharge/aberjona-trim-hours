@@ -41,6 +41,19 @@ export function verificationEmail(name: string, token: string): EmailContent {
   };
 }
 
+export function emailChangeEmail(name: string, token: string): EmailContent {
+  const url = `${appUrl()}/verify-email-change?token=${token}`;
+  return {
+    subject: "Confirm your new Aberjona Tri-M email",
+    html: layout(
+      `Confirm your new email`,
+      `<p>Hi ${name}, confirm this address to make it the new sign-in email for your account. This link expires in 48 hours. If you didn't request this, you can ignore it — your current email stays in place.</p>`,
+      { label: "Confirm New Email", url },
+    ),
+    text: `Hi ${name}, confirm this address to make it your new sign-in email (expires in 48 hours):\n${url}\n\nIf you didn't request this, ignore this email.`,
+  };
+}
+
 export function passwordResetEmail(name: string, token: string): EmailContent {
   const url = `${appUrl()}/reset-password?token=${token}`;
   return {
@@ -132,6 +145,19 @@ export function newRequestEmail(eventTitle: string, requesterName: string): Emai
       { label: "Review Requests", url },
     ),
     text: `${requesterName} requested a new event: ${eventTitle}\nReview: ${url}`,
+  };
+}
+
+export function eventCancelledEmail(eventTitle: string): EmailContent {
+  const url = `${appUrl()}/member/events`;
+  return {
+    subject: `Cancelled: ${eventTitle}`,
+    html: layout(
+      `Event cancelled`,
+      `<p>Unfortunately <strong>${eventTitle}</strong> has been cancelled. You no longer need to attend. Check the events page for other ways to earn hours.</p>`,
+      { label: "View Events", url },
+    ),
+    text: `${eventTitle} has been cancelled.\nOther events: ${url}`,
   };
 }
 

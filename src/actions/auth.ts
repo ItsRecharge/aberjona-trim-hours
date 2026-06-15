@@ -41,6 +41,9 @@ export async function loginAction(
         unverifiedEmail: email,
       };
     }
+    if (result.reason === "deactivated") {
+      return { error: "This account has been deactivated. Contact a chapter officer." };
+    }
     return { error: "Invalid email or password." };
   }
 

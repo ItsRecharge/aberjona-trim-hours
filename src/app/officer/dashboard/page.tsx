@@ -1,21 +1,35 @@
+import Link from "next/link";
+import { Settings } from "lucide-react";
 import { requireUser } from "@/lib/current-user";
 import { listMembersWithProgress } from "@/lib/services/member-service";
-import { YEARLY_HOURS_GOAL } from "@/lib/hours";
+import { getYearlyGoal } from "@/lib/services/chapter-service";
 import { ProgressBar } from "@/components/ProgressBar";
 
 export default async function OfficerDashboard() {
   await requireUser("officer");
-  const members = await listMembersWithProgress();
+  const [members, goal] = await Promise.all([
+    listMembersWithProgress(),
+    getYearlyGoal(),
+  ]);
 
-  const atRisk = members.filter((m) => m.remaining > 0).length;
+  const atRisk = members.filter((m) => !m.deactivatedAt && m.remaining > 0).length;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Member progress</h1>
-        <p className="text-sm text-gray-500">
-          {members.length} members · {atRisk} still working toward {YEARLY_HOURS_GOAL} hrs
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Member progress</h1>
+          <p className="text-sm text-gray-500">
+            {members.length} members · {atRisk} still working toward {goal} hrs
+          </p>
+        </div>
+        <Link
+          href="/officer/chapter"
+          className="flex items-center gap-1.5 text-sm font-medium text-indigo-700 hover:underline"
+        >
+          <Settings className="h-4 w-4" />
+          Chapter settings
+        </Link>
       </div>
 
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">
@@ -33,15 +47,22 @@ export default async function OfficerDashboard() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {members.map((m) => (
-                <tr key={m.id}>
+                <tr key={m.id} className={m.deactivatedAt ? "opacity-50" : ""}>
                   <td className="px-5 py-3">
-                    <p className="font-medium text-gray-900">
+                    <Link
+                      href={`/officer/members/${m.id}`}
+                      className="font-medium text-gray-900 hover:text-indigo-700 hover:underline"
+                    >
                       {m.firstName} {m.lastName}
+                    </Link>
+                    <p className="text-xs text-gray-500">
+                      {m.email}
+                      {m.graduationYear ? ` · '${String(m.graduationYear).slice(-2)}` : ""}
+                      {m.deactivatedAt ? " · inactive" : ""}
                     </p>
-                    <p className="text-xs text-gray-500">{m.email}</p>
                   </td>
                   <td className="px-5 py-3">
-                    <ProgressBar earned={m.earned} />
+                    <ProgressBar earned={m.earned} goal={goal} />
                   </td>
                   <td className="px-5 py-3 text-right font-medium text-gray-900">
                     {m.earned}

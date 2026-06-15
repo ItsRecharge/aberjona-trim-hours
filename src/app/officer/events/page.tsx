@@ -69,14 +69,26 @@ export default async function OfficerEventsPage() {
                     <StatusBadge status={e.status} />
                   </td>
                   <td className="px-6 py-3 text-right align-top">
-                    {(e.status === "active" || e.status === "completed") && (
-                      <Link
-                        href={`/officer/events/${e.id}/attendance`}
-                        className="text-sm font-medium text-indigo-700 hover:underline"
-                      >
-                        {e.status === "completed" ? "Edit attendance" : "Take attendance"}
-                      </Link>
-                    )}
+                    <div className="flex flex-col items-end gap-1">
+                      {(e.status === "active" || e.status === "completed") && (
+                        <Link
+                          href={`/officer/events/${e.id}/attendance`}
+                          className="text-sm font-medium text-indigo-700 hover:underline"
+                        >
+                          {e.status === "completed"
+                            ? "Edit attendance"
+                            : "Take attendance"}
+                        </Link>
+                      )}
+                      {e.status !== "cancelled" && (
+                        <Link
+                          href={`/officer/events/${e.id}/edit`}
+                          className="text-sm font-medium text-gray-600 hover:underline"
+                        >
+                          Edit
+                        </Link>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

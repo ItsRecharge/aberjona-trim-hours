@@ -8,7 +8,7 @@ const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 12);
 
 export type LoginResult =
   | { ok: true; user: User }
-  | { ok: false; reason: "invalid_credentials" | "unverified" };
+  | { ok: false; reason: "invalid_credentials" | "unverified" | "deactivated" };
 
 export async function verifyCredentials(
   email: string,
@@ -17,6 +17,7 @@ export async function verifyCredentials(
   const user = await db.user.findUnique({ where: { email } });
   const matches = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !matches) return { ok: false, reason: "invalid_credentials" };
+  if (user.deactivatedAt) return { ok: false, reason: "deactivated" };
   if (!user.emailVerifiedAt) return { ok: false, reason: "unverified" };
   return { ok: true, user };
 }

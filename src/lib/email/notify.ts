@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { fullName } from "@/lib/current-user";
 import { sendMail } from "./mailer";
 import {
+  eventCancelledEmail,
   eventPostedEmail,
   hourReportDecisionEmail,
   hoursCreditedEmail,
@@ -29,7 +30,7 @@ async function safeSend(fn: () => Promise<unknown>): Promise<void> {
 
 async function verifiedEmailsByRole(role: string): Promise<string[]> {
   const users = await db.user.findMany({
-    where: { role, emailVerifiedAt: { not: null } },
+    where: { role, emailVerifiedAt: { not: null }, deactivatedAt: null },
     select: { email: true },
   });
   return users.map((u) => u.email);
@@ -70,7 +71,7 @@ export async function notifyRequestDecision(
 ): Promise<void> {
   await safeSend(async () => {
     const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user?.emailVerifiedAt) return;
+    if (!user?.emailVerifiedAt || user.deactivatedAt) return;
     await sendMail({ to: user.email, ...requestDecisionEmail(eventTitle, approved) });
   });
 }
@@ -81,7 +82,7 @@ export async function notifyHoursCredited(
   await safeSend(async () => {
     for (const c of credits) {
       const user = await db.user.findUnique({ where: { id: c.userId } });
-      if (!user?.emailVerifiedAt) continue;
+      if (!user?.emailVerifiedAt || user.deactivatedAt) continue;
       await sendMail({
         to: user.email,
         ...hoursCreditedEmail(fullName(user), c.hours, c.eventTitle),
@@ -104,6 +105,25 @@ export async function notifyNewRequest(
   });
 }
 
+export async function notifyEventCancelled(
+  userIds: number[],
+  eventTitle: string,
+): Promise<void> {
+  if (userIds.length === 0) return;
+  await safeSend(async () => {
+    const users = await db.user.findMany({
+      where: { id: { in: userIds }, emailVerifiedAt: { not: null }, deactivatedAt: null },
+      select: { email: true },
+    });
+    const emails = users.map((u) => u.email);
+    if (emails.length === 0) return;
+    const content = eventCancelledEmail(eventTitle);
+    for (const group of chunk(emails, BCC_CHUNK)) {
+      await sendMail({ bcc: group, ...content });
+    }
+  });
+}
+
 export async function notifyWaitlistPromoted(
   userIds: number[],
   eventTitle: string,
@@ -113,7 +133,7 @@ export async function notifyWaitlistPromoted(
   await safeSend(async () => {
     for (const id of userIds) {
       const user = await db.user.findUnique({ where: { id } });
-      if (!user?.emailVerifiedAt) continue;
+      if (!user?.emailVerifiedAt || user.deactivatedAt) continue;
       await sendMail({
         to: user.email,
         ...waitlistPromotedEmail(fullName(user), eventTitle, slotLabel),
@@ -130,7 +150,7 @@ export async function notifyHourReportDecision(
 ): Promise<void> {
   await safeSend(async () => {
     const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user?.emailVerifiedAt) return;
+    if (!user?.emailVerifiedAt || user.deactivatedAt) return;
     await sendMail({
       to: user.email,
       ...hourReportDecisionEmail(fullName(user), description, hours, approved),

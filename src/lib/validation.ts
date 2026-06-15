@@ -13,11 +13,17 @@ export const passwordSchema = z
   .min(8, "Password must be at least 8 characters")
   .max(128);
 
+const graduationYearSchema = z
+  .union([z.literal(""), z.coerce.number().int().min(1980).max(2100)])
+  .optional()
+  .transform((v) => (v === "" || v === undefined ? undefined : Number(v)));
+
 export const signupSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(50),
   lastName: z.string().trim().max(50).default(""),
   email: emailSchema,
   password: passwordSchema,
+  graduationYear: graduationYearSchema,
   inviteToken: z.string().min(1, "Invite token is missing"),
 });
 
@@ -31,6 +37,16 @@ export const forgotPasswordSchema = z.object({ email: emailSchema });
 export const resetPasswordSchema = z.object({
   token: z.string().min(1),
   password: passwordSchema,
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Enter your current password"),
+  newPassword: passwordSchema,
+});
+
+export const changeEmailSchema = z.object({
+  newEmail: emailSchema,
+  currentPassword: z.string().min(1, "Enter your current password"),
 });
 
 const dateOnly = z
@@ -97,4 +113,30 @@ export const inviteSchema = z.object({
   expiresInDays: z.coerce.number().int().min(1).max(365),
   maxUses: z.coerce.number().int().positive().max(1000).optional(),
   role: z.enum(ROLES).default("member"),
+});
+
+export const chapterSettingsSchema = z.object({
+  chapterName: z.string().trim().min(1, "Chapter name is required").max(60),
+  yearlyHoursGoal: z.coerce
+    .number()
+    .positive("Goal must be positive")
+    .max(1000, "Goal is too large"),
+});
+
+export const profileSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(50),
+  lastName: z.string().trim().max(50).default(""),
+  graduationYear: graduationYearSchema,
+});
+
+export const adjustHoursSchema = z.object({
+  description: z.string().trim().min(1, "Describe the adjustment").max(200),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+    .transform((s) => new Date(`${s}T00:00:00.000Z`)),
+  hours: z.coerce
+    .number()
+    .refine((n) => n !== 0, "Hours can't be zero")
+    .refine((n) => Math.abs(n) <= 100, "That's too many hours"),
 });

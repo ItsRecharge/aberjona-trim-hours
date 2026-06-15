@@ -12,7 +12,11 @@ export const EVENT_STATUSES = [
 ] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
-export const TOKEN_TYPES = ["email_verification", "password_reset"] as const;
+export const TOKEN_TYPES = [
+  "email_verification",
+  "password_reset",
+  "email_change",
+] as const;
 export type TokenType = (typeof TOKEN_TYPES)[number];
 
 export const SIGNUP_STATUSES = ["confirmed", "waitlisted"] as const;

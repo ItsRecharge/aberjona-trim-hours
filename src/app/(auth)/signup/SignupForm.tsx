@@ -38,6 +38,20 @@ export function SignupForm({ inviteToken }: { inviteToken: string }) {
         <input id="email" name="email" type="email" required className={fieldClass} />
       </div>
       <div>
+        <label htmlFor="graduationYear" className={labelClass}>
+          Graduation year <span className="text-gray-400">(optional)</span>
+        </label>
+        <input
+          id="graduationYear"
+          name="graduationYear"
+          type="number"
+          min="1980"
+          max="2100"
+          placeholder="e.g. 2027"
+          className={fieldClass}
+        />
+      </div>
+      <div>
         <label htmlFor="password" className={labelClass}>
           Password
         </label>

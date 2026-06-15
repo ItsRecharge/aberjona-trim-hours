@@ -1,16 +1,11 @@
 import Link from "next/link";
-import { Calendar, Clock, LayoutDashboard, Music, PlusCircle } from "lucide-react";
+import { Music } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { getFlash } from "@/lib/flash";
 import { FlashMessages } from "@/components/FlashMessages";
-import { LogoutButton } from "@/components/LogoutButton";
-
-const NAV = [
-  { href: "/member/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/member/events", label: "Events", icon: Calendar },
-  { href: "/member/report-hours", label: "Report Hours", icon: Clock },
-  { href: "/member/request-event", label: "Request Event", icon: PlusCircle },
-];
+import { AccountControls } from "@/components/AccountControls";
+import { BottomNav } from "@/components/BottomNav";
+import { MEMBER_NAV } from "@/lib/nav";
 
 export default async function MemberLayout({
   children,
@@ -23,34 +18,43 @@ export default async function MemberLayout({
   return (
     <div className="min-h-screen">
       <header className="bg-indigo-700 text-white shadow">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/member/dashboard" className="flex items-center gap-2 font-bold">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+          <Link
+            href="/member/dashboard"
+            className="flex shrink-0 items-center gap-2 font-bold"
+          >
             <Music className="h-5 w-5" />
-            <span className="tracking-wide">Tri-M Hours</span>
+            <span className="tracking-wide whitespace-nowrap">Tri-M Hours Log</span>
           </Link>
-          <nav className="flex items-center gap-1">
-            {NAV.map((item) => (
+
+          {/* Desktop nav (phones use the bottom bar) */}
+          <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
+            {MEMBER_NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-white/85 transition hover:bg-white/10 hover:text-white"
+                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white/85 transition hover:bg-white/10 hover:text-white"
               >
                 <item.icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{item.label}</span>
+                {item.label}
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-white/80 md:inline">{fullName(user)}</span>
-            <LogoutButton className="text-white/85 opacity-85" />
+
+          {/* Account block, flush right */}
+          <div className="flex shrink-0 flex-col items-end gap-1 text-sm">
+            <span className="font-medium">{fullName(user)}</span>
+            <AccountControls className="text-white/85" align="end" />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:py-8 md:pb-8">
         <FlashMessages messages={flash} />
         {children}
       </main>
+
+      <BottomNav variant="member" />
     </div>
   );
 }
