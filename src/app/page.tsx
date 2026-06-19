@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { KeyRound, LogIn, Music } from "lucide-react";
+import { isFirstRun } from "@/lib/services/setup-service";
 
 const DECO_NOTES = [
   { size: "9rem", style: { top: "4%", left: "2%", transform: "rotate(-18deg)" } },
@@ -8,7 +10,12 @@ const DECO_NOTES = [
   { size: "4rem", style: { bottom: "20%", left: "8%", transform: "rotate(25deg)" } },
 ];
 
-export default function LandingPage() {
+// The first-run redirect depends on live DB state, not build-time state.
+export const dynamic = "force-dynamic";
+
+export default async function LandingPage() {
+  if (await isFirstRun()) redirect("/setup");
+
   return (
     <div className="hero-gradient flex min-h-screen items-center">
       {DECO_NOTES.map((note, i) => (

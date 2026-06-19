@@ -123,6 +123,21 @@ export const chapterSettingsSchema = z.object({
     .max(1000, "Goal is too large"),
 });
 
+export const setupSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(50),
+  lastName: z.string().trim().max(50).default(""),
+  email: emailSchema,
+  password: passwordSchema,
+  chapterName: z.string().trim().min(1, "Chapter name is required").max(60),
+  yearlyHoursGoal: z.coerce
+    .number()
+    .positive("Goal must be positive")
+    .max(1000, "Goal is too large"),
+  // Optional email config — left blank skips mail setup. Both required together.
+  gmailUser: z.string().trim().optional().default(""),
+  gmailAppPassword: z.string().trim().optional().default(""),
+});
+
 export const profileSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(50),
   lastName: z.string().trim().max(50).default(""),
