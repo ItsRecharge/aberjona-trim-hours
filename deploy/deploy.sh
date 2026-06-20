@@ -5,14 +5,16 @@
 # Run as the service user (musicserver) from anywhere:
 #   ./deploy/deploy.sh
 #
-# Steps: pull → install deps → apply DB migrations → regenerate Prisma client →
-# build → restart the systemd service. `next start` only ever serves the prebuilt
-# .next directory, so the build step is what actually ships your changes.
+# The systemd unit rebuilds on every (re)start (ExecStartPre runs prisma migrate
+# deploy, prisma generate, and npm run build), so a deploy is just: get the new
+# code (and deps) onto disk, then restart. This script does exactly that.
+#
+# Code-only change? You can skip this script and just run:
+#   git pull && sudo systemctl restart aberjona-trim-hours
 
 set -euo pipefail
 
 SERVICE="aberjona-trim-hours"
-# Resolve the project root from this script's location (deploy/ -> repo root).
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
@@ -22,20 +24,10 @@ log "Pulling latest from origin/main"
 git pull --ff-only
 
 log "Installing dependencies (npm ci)"
-# ci is reproducible and prunes removed deps; falls back to install if no lockfile.
+# Run here (outside the systemd sandbox) so the npm cache in \$HOME is writable.
 if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-log "Applying database migrations"
-npx prisma migrate deploy
-
-log "Regenerating Prisma client"
-npx prisma generate
-
-log "Building the app"
-npm run build
-
-log "Restarting the service ($SERVICE)"
-# sudo so an unprivileged service user can restart the unit; harmless if already root.
+log "Restarting the service ($SERVICE) — it will migrate, generate, and build"
 if command -v sudo >/dev/null 2>&1; then
   sudo systemctl restart "$SERVICE"
 else

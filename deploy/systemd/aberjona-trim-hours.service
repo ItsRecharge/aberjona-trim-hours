@@ -1,6 +1,9 @@
 [Unit]
 Description=Aberjona Tri-M Hours (Next.js)
 After=network.target
+# If startup (build) fails 3x within 10 min, stop retrying instead of rebuild-looping.
+StartLimitIntervalSec=600
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -14,14 +17,19 @@ Environment=HOSTNAME=127.0.0.1
 # If Node is installed via nvm, include its bin path.
 Environment=PATH=/home/musicserver/.nvm/versions/node/v24.17.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 
-# Build once manually before first start: npm run build
-# To ship later changes, run deploy/deploy.sh (pull -> migrate -> build -> restart);
-# `npm run start` only serves the prebuilt .next, so a restart alone won't update.
+# Deploy flow: `git pull` (then `npm ci` if deps changed) and restart the service.
+# These ExecStartPre steps rebuild on every (re)start so the new code is served.
+# `npm run start` only serves the prebuilt .next, so the build here is what ships it.
+ExecStartPre=/usr/bin/env npx prisma migrate deploy
+ExecStartPre=/usr/bin/env npx prisma generate
+ExecStartPre=/usr/bin/env npm run build
 ExecStart=/usr/bin/env npm run start
 Restart=always
 RestartSec=5
 KillSignal=SIGINT
 TimeoutStopSec=30
+# The build runs during startup; give it room on a small box.
+TimeoutStartSec=300
 
 # Hardening
 NoNewPrivileges=true
@@ -39,7 +47,11 @@ MemoryDenyWriteExecute=false
 SystemCallArchitectures=native
 # Next.js startup queries local interfaces (uv_interface_addresses), which needs AF_NETLINK.
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+# Writable for the runtime DB and for the on-restart build (.next + prisma client).
+# src/ and the rest of the tree stay read-only via ReadOnlyPaths below.
 ReadWritePaths=/home/musicserver/aberjona-trim-hours/data
+ReadWritePaths=/home/musicserver/aberjona-trim-hours/.next
+ReadWritePaths=/home/musicserver/aberjona-trim-hours/node_modules
 ReadOnlyPaths=/home/musicserver/aberjona-trim-hours
 
 [Install]
