@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, Plug, ScrollText, AlertTriangle } from "lucide-react";
+import { Settings, Plug, ScrollText, AlertTriangle, Users } from "lucide-react";
 import { requireUser } from "@/lib/current-user";
 import { isOpsConsoleEnabled } from "@/lib/ops-access";
 
@@ -9,6 +9,12 @@ const CARDS = [
     title: "Chapter settings",
     desc: "Chapter name and the yearly service-hours goal.",
     icon: Settings,
+  },
+  {
+    href: "/officer/officers",
+    title: "Officers",
+    desc: "View officers, reset passwords, and remove officers as they change.",
+    icon: Users,
   },
   {
     href: "/officer/integrations",

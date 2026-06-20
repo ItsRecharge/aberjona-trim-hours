@@ -61,6 +61,23 @@ export default async function ChapterSettingsPage() {
               Progress bars turn yellow at 30% and green at 70% of this goal.
             </p>
           </div>
+          <div>
+            <label htmlFor="publicUrl" className={label}>
+              Public site URL
+            </label>
+            <input
+              id="publicUrl"
+              name="publicUrl"
+              type="url"
+              defaultValue={settings.publicUrl ?? ""}
+              placeholder={process.env.APP_URL ?? "https://example.com"}
+              className={field}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Used for the buttons in emails (verify, reset, notifications). Leave
+              blank to use the server&apos;s configured address.
+            </p>
+          </div>
           <SubmitButton pendingText="Saving…">Save Settings</SubmitButton>
         </div>
       </form>

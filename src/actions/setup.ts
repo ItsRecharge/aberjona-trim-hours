@@ -65,6 +65,7 @@ export async function completeSetupAction(
   await updateChapterSettings({
     chapterName: data.chapterName,
     yearlyHoursGoal: data.yearlyHoursGoal,
+    publicUrl: null,
   });
 
   if (data.gmailUser && data.gmailAppPassword) {

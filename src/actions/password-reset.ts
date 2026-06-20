@@ -8,6 +8,7 @@ import { revokeAllUserSessions } from "@/lib/services/session-service";
 import { hashPassword } from "@/lib/services/auth-service";
 import { sendMail } from "@/lib/email/mailer";
 import { passwordResetEmail } from "@/lib/email/templates";
+import { getPublicBaseUrl } from "@/lib/services/chapter-service";
 import { setFlash } from "@/lib/flash";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -32,7 +33,10 @@ export async function forgotPasswordAction(
   if (user) {
     try {
       const token = await issueAuthToken(user.id, "password_reset");
-      await sendMail({ to: user.email, ...passwordResetEmail(user.firstName, token) });
+      await sendMail({
+        to: user.email,
+        ...passwordResetEmail(user.firstName, token, await getPublicBaseUrl()),
+      });
     } catch (err) {
       console.error("[forgot-password] email failed:", err);
     }

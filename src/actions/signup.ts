@@ -7,6 +7,7 @@ import { signupWithInvite } from "@/lib/services/signup-service";
 import { consumeAuthToken, issueAuthToken } from "@/lib/services/token-service";
 import { sendMail } from "@/lib/email/mailer";
 import { verificationEmail } from "@/lib/email/templates";
+import { getPublicBaseUrl } from "@/lib/services/chapter-service";
 import { setFlash } from "@/lib/flash";
 import { rateLimit } from "@/lib/rate-limit";
 import { requestIp } from "@/lib/request-ip";
@@ -61,7 +62,11 @@ export async function signupAction(
   // Transactional verification email — sent inline; signup still succeeds if it
   // fails (the user can resend from the login page).
   try {
-    const content = verificationEmail(result.firstName, result.verificationToken);
+    const content = verificationEmail(
+      result.firstName,
+      result.verificationToken,
+      await getPublicBaseUrl(),
+    );
     await sendMail({ to: result.email, ...content });
   } catch (err) {
     console.error("[signup] verification email failed:", err);
@@ -88,7 +93,10 @@ export async function resendVerificationAction(formData: FormData): Promise<void
   if (user && !user.emailVerifiedAt) {
     try {
       const token = await issueAuthToken(user.id, "email_verification");
-      await sendMail({ to: user.email, ...verificationEmail(user.firstName, token) });
+      await sendMail({
+        to: user.email,
+        ...verificationEmail(user.firstName, token, await getPublicBaseUrl()),
+      });
     } catch (err) {
       console.error("[resend] verification email failed:", err);
     }

@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { fullName } from "@/lib/current-user";
 import { hoursEarnedForUser } from "@/lib/services/member-service";
-import { getYearlyGoal } from "@/lib/services/chapter-service";
+import { getPublicBaseUrl, getYearlyGoal } from "@/lib/services/chapter-service";
 import { hoursRemaining, schoolYearRange } from "@/lib/hours";
 import { sendMail } from "./mailer";
 import {
@@ -61,7 +61,7 @@ export async function notifyEventPosted(event: {
       event.slots.length === 1
         ? `${dateLabel(event.slots[0].date)}, ${event.slots[0].startTime}–${event.slots[0].endTime}`
         : `${event.slots.length} timeslots starting ${dateLabel(event.slots[0].date)}`;
-    const content = eventPostedEmail(event.title, whenLabel);
+    const content = eventPostedEmail(event.title, whenLabel, await getPublicBaseUrl());
     for (const group of chunk(recipients, BCC_CHUNK)) {
       await sendMail({ bcc: group, ...content });
     }
@@ -76,7 +76,10 @@ export async function notifyRequestDecision(
   await safeSend(async () => {
     const user = await db.user.findUnique({ where: { id: userId } });
     if (!user?.emailVerifiedAt || user.deactivatedAt) return;
-    await sendMail({ to: user.email, ...requestDecisionEmail(eventTitle, approved) });
+    await sendMail({
+      to: user.email,
+      ...requestDecisionEmail(eventTitle, approved, await getPublicBaseUrl()),
+    });
   });
 }
 
@@ -84,12 +87,13 @@ export async function notifyHoursCredited(
   credits: { userId: number; hours: number; eventTitle: string }[],
 ): Promise<void> {
   await safeSend(async () => {
+    const baseUrl = await getPublicBaseUrl();
     for (const c of credits) {
       const user = await db.user.findUnique({ where: { id: c.userId } });
       if (!user?.emailVerifiedAt || user.deactivatedAt) continue;
       await sendMail({
         to: user.email,
-        ...hoursCreditedEmail(fullName(user), c.hours, c.eventTitle),
+        ...hoursCreditedEmail(fullName(user), c.hours, c.eventTitle, baseUrl),
       });
     }
   });
@@ -114,6 +118,7 @@ export async function notifyHoursSummary(): Promise<void> {
     const members = await db.user.findMany({
       where: { role: "member", emailVerifiedAt: { not: null }, deactivatedAt: null },
     });
+    const baseUrl = await getPublicBaseUrl();
 
     for (const m of members) {
       try {
@@ -126,6 +131,7 @@ export async function notifyHoursSummary(): Promise<void> {
             hoursRemaining(earned, goal),
             goal,
             deadline,
+            baseUrl,
           ),
         });
       } catch (err) {
@@ -142,7 +148,7 @@ export async function notifyNewRequest(
   await safeSend(async () => {
     const recipients = await verifiedEmailsByRole("officer");
     if (recipients.length === 0) return;
-    const content = newRequestEmail(eventTitle, requesterName);
+    const content = newRequestEmail(eventTitle, requesterName, await getPublicBaseUrl());
     for (const group of chunk(recipients, BCC_CHUNK)) {
       await sendMail({ bcc: group, ...content });
     }
@@ -161,7 +167,7 @@ export async function notifyEventCancelled(
     });
     const emails = users.map((u) => u.email);
     if (emails.length === 0) return;
-    const content = eventCancelledEmail(eventTitle);
+    const content = eventCancelledEmail(eventTitle, await getPublicBaseUrl());
     for (const group of chunk(emails, BCC_CHUNK)) {
       await sendMail({ bcc: group, ...content });
     }
@@ -175,12 +181,13 @@ export async function notifyWaitlistPromoted(
 ): Promise<void> {
   if (userIds.length === 0) return;
   await safeSend(async () => {
+    const baseUrl = await getPublicBaseUrl();
     for (const id of userIds) {
       const user = await db.user.findUnique({ where: { id } });
       if (!user?.emailVerifiedAt || user.deactivatedAt) continue;
       await sendMail({
         to: user.email,
-        ...waitlistPromotedEmail(fullName(user), eventTitle, slotLabel),
+        ...waitlistPromotedEmail(fullName(user), eventTitle, slotLabel, baseUrl),
       });
     }
   });
@@ -197,7 +204,13 @@ export async function notifyHourReportDecision(
     if (!user?.emailVerifiedAt || user.deactivatedAt) return;
     await sendMail({
       to: user.email,
-      ...hourReportDecisionEmail(fullName(user), description, hours, approved),
+      ...hourReportDecisionEmail(
+        fullName(user),
+        description,
+        hours,
+        approved,
+        await getPublicBaseUrl(),
+      ),
     });
   });
 }

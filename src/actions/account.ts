@@ -18,6 +18,7 @@ import {
 import { createSession } from "@/lib/session";
 import { sendMail } from "@/lib/email/mailer";
 import { emailChangeEmail } from "@/lib/email/templates";
+import { getPublicBaseUrl } from "@/lib/services/chapter-service";
 import type { Role } from "@/lib/constants";
 
 export interface AccountFormState {
@@ -114,7 +115,10 @@ export async function changeEmailAction(
   await db.user.update({ where: { id: user.id }, data: { pendingEmail: newEmail } });
   const token = await issueAuthToken(user.id, "email_change");
   try {
-    await sendMail({ to: newEmail, ...emailChangeEmail(user.firstName, token) });
+    await sendMail({
+      to: newEmail,
+      ...emailChangeEmail(user.firstName, token, await getPublicBaseUrl()),
+    });
   } catch (err) {
     console.error("[email-change] verification email failed:", err);
   }

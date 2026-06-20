@@ -13,6 +13,7 @@ export async function updateChapterAction(formData: FormData): Promise<void> {
   const parsed = chapterSettingsSchema.safeParse({
     chapterName: formData.get("chapterName"),
     yearlyHoursGoal: formData.get("yearlyHoursGoal"),
+    publicUrl: formData.get("publicUrl") ?? "",
   });
   if (!parsed.success) {
     await setFlash("danger", parsed.error.issues[0].message);

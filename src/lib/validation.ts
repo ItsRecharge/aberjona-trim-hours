@@ -121,6 +121,13 @@ export const chapterSettingsSchema = z.object({
     .number()
     .positive("Goal must be positive")
     .max(1000, "Goal is too large"),
+  // Public base URL for email links; blank falls back to APP_URL.
+  publicUrl: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? v : null))
+    .pipe(z.string().url("Enter a valid URL (https://…)").nullable()),
 });
 
 export const setupSchema = z.object({

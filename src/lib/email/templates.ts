@@ -28,8 +28,12 @@ function layout(heading: string, bodyHtml: string, cta?: { label: string; url: s
   </div></body></html>`;
 }
 
-export function verificationEmail(name: string, token: string): EmailContent {
-  const url = `${appUrl()}/verify-email?token=${token}`;
+export function verificationEmail(
+  name: string,
+  token: string,
+  baseUrl: string = appUrl(),
+): EmailContent {
+  const url = `${baseUrl}/verify-email?token=${token}`;
   return {
     subject: "Verify your Aberjona Tri-M account",
     html: layout(
@@ -41,8 +45,12 @@ export function verificationEmail(name: string, token: string): EmailContent {
   };
 }
 
-export function emailChangeEmail(name: string, token: string): EmailContent {
-  const url = `${appUrl()}/verify-email-change?token=${token}`;
+export function emailChangeEmail(
+  name: string,
+  token: string,
+  baseUrl: string = appUrl(),
+): EmailContent {
+  const url = `${baseUrl}/verify-email-change?token=${token}`;
   return {
     subject: "Confirm your new Aberjona Tri-M email",
     html: layout(
@@ -54,8 +62,12 @@ export function emailChangeEmail(name: string, token: string): EmailContent {
   };
 }
 
-export function passwordResetEmail(name: string, token: string): EmailContent {
-  const url = `${appUrl()}/reset-password?token=${token}`;
+export function passwordResetEmail(
+  name: string,
+  token: string,
+  baseUrl: string = appUrl(),
+): EmailContent {
+  const url = `${baseUrl}/reset-password?token=${token}`;
   return {
     subject: "Reset your Aberjona Tri-M password",
     html: layout(
@@ -79,8 +91,12 @@ export function inviteEmail(link: string, expiresAt: Date): EmailContent {
   };
 }
 
-export function eventPostedEmail(eventTitle: string, whenLabel: string): EmailContent {
-  const url = `${appUrl()}/member/events`;
+export function eventPostedEmail(
+  eventTitle: string,
+  whenLabel: string,
+  baseUrl: string = appUrl(),
+): EmailContent {
+  const url = `${baseUrl}/member/events`;
   return {
     subject: `New volunteer event: ${eventTitle}`,
     html: layout(
@@ -95,8 +111,9 @@ export function eventPostedEmail(eventTitle: string, whenLabel: string): EmailCo
 export function requestDecisionEmail(
   eventTitle: string,
   approved: boolean,
+  baseUrl: string = appUrl(),
 ): EmailContent {
-  const url = `${appUrl()}/member/dashboard`;
+  const url = `${baseUrl}/member/dashboard`;
   return approved
     ? {
         subject: `Your event request was approved: ${eventTitle}`,
@@ -122,8 +139,9 @@ export function hoursCreditedEmail(
   name: string,
   hours: number,
   eventTitle: string,
+  baseUrl: string = appUrl(),
 ): EmailContent {
-  const url = `${appUrl()}/member/dashboard`;
+  const url = `${baseUrl}/member/dashboard`;
   return {
     subject: `${hours} service hours credited`,
     html: layout(
@@ -141,15 +159,16 @@ export function hoursSummaryEmail(
   remaining: number,
   goal: number,
   deadlineLabel: string,
+  baseUrl: string = appUrl(),
 ): EmailContent {
-  const url = `${appUrl()}/member/events`;
+  const url = `${baseUrl}/member/events`;
   if (remaining <= 0) {
     return {
       subject: "You've completed your service hours 🎉",
       html: layout(
         `You're all set, ${name}!`,
         `<p>You've earned <strong>${earned} of ${goal}</strong> service hours this year — goal met. Thank you for your service!</p>`,
-        { label: "View Your Hours", url: `${appUrl()}/member/dashboard` },
+        { label: "View Your Hours", url: `${baseUrl}/member/dashboard` },
       ),
       text: `You're all set, ${name}! You've earned ${earned} of ${goal} hours — goal met. Thank you!`,
     };
@@ -165,8 +184,12 @@ export function hoursSummaryEmail(
   };
 }
 
-export function newRequestEmail(eventTitle: string, requesterName: string): EmailContent {
-  const url = `${appUrl()}/officer/requests`;
+export function newRequestEmail(
+  eventTitle: string,
+  requesterName: string,
+  baseUrl: string = appUrl(),
+): EmailContent {
+  const url = `${baseUrl}/officer/requests`;
   return {
     subject: `New event request: ${eventTitle}`,
     html: layout(
@@ -178,8 +201,11 @@ export function newRequestEmail(eventTitle: string, requesterName: string): Emai
   };
 }
 
-export function eventCancelledEmail(eventTitle: string): EmailContent {
-  const url = `${appUrl()}/member/events`;
+export function eventCancelledEmail(
+  eventTitle: string,
+  baseUrl: string = appUrl(),
+): EmailContent {
+  const url = `${baseUrl}/member/events`;
   return {
     subject: `Cancelled: ${eventTitle}`,
     html: layout(
@@ -195,8 +221,9 @@ export function waitlistPromotedEmail(
   name: string,
   eventTitle: string,
   slotLabel: string,
+  baseUrl: string = appUrl(),
 ): EmailContent {
-  const url = `${appUrl()}/member/events`;
+  const url = `${baseUrl}/member/events`;
   return {
     subject: `A spot opened up: ${eventTitle}`,
     html: layout(
@@ -213,8 +240,9 @@ export function hourReportDecisionEmail(
   description: string,
   hours: number,
   approved: boolean,
+  baseUrl: string = appUrl(),
 ): EmailContent {
-  const url = `${appUrl()}/member/report-hours`;
+  const url = `${baseUrl}/member/report-hours`;
   return approved
     ? {
         subject: `Your hour report was approved (${hours} hrs)`,

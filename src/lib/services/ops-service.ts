@@ -139,6 +139,30 @@ export async function writeOpsFile(relativePath: string, content: string): Promi
   await fs.writeFile(absPath, content, "utf8");
 }
 
+/**
+ * Runs an arbitrary shell command inside the project root and returns its
+ * combined stdout+stderr plus exit code. Privileged: callers MUST gate this
+ * behind super-admin + a valid ops grant. Times out after 30s.
+ */
+export async function runShellCommand(
+  command: string,
+): Promise<{ output: string; exitCode: number }> {
+  try {
+    const { stdout, stderr } = await execFileAsync("/bin/bash", ["-lc", command], {
+      cwd: PROJECT_ROOT,
+      timeout: 30_000,
+      maxBuffer: 256 * 1024,
+      encoding: "utf8",
+      env: process.env,
+    });
+    return { output: truncateOutput([stdout, stderr].filter(Boolean).join("\n")), exitCode: 0 };
+  } catch (err) {
+    const e = err as { stdout?: string; stderr?: string; code?: number; message?: string };
+    const body = [e.stdout, e.stderr].filter(Boolean).join("\n") || e.message || "Command failed.";
+    return { output: truncateOutput(body), exitCode: typeof e.code === "number" ? e.code : 1 };
+  }
+}
+
 async function runGit(args: string[]): Promise<string> {
   const result = await execFileAsync("git", args, {
     cwd: PROJECT_ROOT,

@@ -135,6 +135,7 @@ model ChapterSettings {
   id              Int      @id @default(1) // singleton row
   chapterName     String   @default("Aberjona Chapter")
   yearlyHoursGoal Float    @default(10.0)
+  publicUrl       String? // public base URL used in email links; falls back to APP_URL
   updatedAt       DateTime @updatedAt
 }
 

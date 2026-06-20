@@ -20,8 +20,16 @@ import {
   gitLog,
   gitPull,
   gitStatus,
+  runShellCommand,
   writeOpsFile,
 } from "@/lib/services/ops-service";
+
+export interface OpsShellState {
+  command: string;
+  output: string;
+  exitCode: number | null;
+  error?: string;
+}
 
 export async function requestOpsGrantAction(formData: FormData): Promise<void> {
   const user = await requireSuperAdmin();
@@ -127,4 +135,26 @@ export async function runOpsGitAction(formData: FormData): Promise<void> {
 
   const outputParam = output ? `&output=${encodeURIComponent(output)}` : "";
   redirect(`/officer/ops?path=${encodeURIComponent(path)}&git=${encodeURIComponent(command)}${outputParam}`);
+}
+
+export async function runOpsShellAction(
+  _prev: OpsShellState,
+  formData: FormData,
+): Promise<OpsShellState> {
+  const user = await requireSuperAdmin();
+  await requireOpsGrant(user);
+
+  const command = String(formData.get("command") ?? "").trim();
+  if (!command) {
+    return { command: "", output: "", exitCode: null, error: "Enter a command to run." };
+  }
+
+  const { output, exitCode } = await runShellCommand(command);
+  await recordAudit({
+    actor: user,
+    action: "ops.shell",
+    summary: `$ ${command.slice(0, 200)} (exit ${exitCode})${output ? `: ${output.slice(0, 120)}` : ""}`,
+  });
+
+  return { command, output, exitCode };
 }

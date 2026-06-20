@@ -3,7 +3,7 @@ import { SESSION_COOKIE } from "@/lib/constants";
 import { verifySessionToken } from "@/lib/session-token";
 
 export const config = {
-  matcher: ["/member/:path*", "/officer/:path*", "/settings", "/settings/:path*"],
+  matcher: ["/member/:path*", "/officer/:path*"],
 };
 
 export async function middleware(req: NextRequest) {

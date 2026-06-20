@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/current-user";
 import { isOpsConsoleEnabled, isSuperAdmin, hasValidOpsGrant } from "@/lib/ops-access";
 import { SubmitButton } from "@/components/SubmitButton";
 import { OpsSettingsModal } from "@/components/OpsSettingsModal";
+import { OpsTerminal } from "@/components/OpsTerminal";
 import { gitHead, loadOpsWorkspace } from "@/lib/services/ops-service";
 
 const field =
@@ -210,6 +211,10 @@ export default async function OpsPage({
             </pre>
           </div>
         </section>
+      </div>
+
+      <div className="mt-6">
+        <OpsTerminal />
       </div>
     </div>
   );
