@@ -5,9 +5,9 @@
 # Run as the service user (musicserver) from anywhere:
 #   ./deploy/deploy.sh
 #
-# The systemd unit rebuilds on every (re)start (ExecStartPre runs prisma migrate
-# deploy, prisma generate, and npm run build), so a deploy is just: get the new
-# code (and deps) onto disk, then restart. This script does exactly that.
+# On restart the systemd unit runs deploy/prestart.sh, which applies migrations and
+# rebuilds only when HEAD changed since the last build. So a deploy is just: get the
+# new code (and deps) onto disk, then restart. This script does exactly that.
 #
 # Code-only change? You can skip this script and just run:
 #   git pull && sudo systemctl restart aberjona-trim-hours

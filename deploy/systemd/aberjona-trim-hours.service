@@ -18,11 +18,9 @@ Environment=HOSTNAME=127.0.0.1
 Environment=PATH=/home/musicserver/.nvm/versions/node/v24.17.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 
 # Deploy flow: `git pull` (then `npm ci` if deps changed) and restart the service.
-# These ExecStartPre steps rebuild on every (re)start so the new code is served.
-# `npm run start` only serves the prebuilt .next, so the build here is what ships it.
-ExecStartPre=/usr/bin/env npx prisma migrate deploy
-ExecStartPre=/usr/bin/env npx prisma generate
-ExecStartPre=/usr/bin/env npm run build
+# prestart.sh applies migrations and rebuilds ONLY when HEAD changed since the last
+# build (otherwise it reuses the old .next, so an unchanged restart is fast).
+ExecStartPre=/usr/bin/env bash deploy/prestart.sh
 ExecStart=/usr/bin/env npm run start
 Restart=always
 RestartSec=5
