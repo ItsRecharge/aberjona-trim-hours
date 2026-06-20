@@ -16,7 +16,7 @@ export async function updateChapterAction(formData: FormData): Promise<void> {
   });
   if (!parsed.success) {
     await setFlash("danger", parsed.error.issues[0].message);
-    redirect("/officer/chapter");
+    redirect("/officer/admin");
   }
 
   await updateChapterSettings(parsed.data);
@@ -26,6 +26,6 @@ export async function updateChapterAction(formData: FormData): Promise<void> {
     summary: `Updated chapter settings (goal ${parsed.data.yearlyHoursGoal} hrs)`,
   });
   await setFlash("success", "Chapter settings updated.");
-  revalidatePath("/officer/chapter");
-  redirect("/officer/chapter");
+  revalidatePath("/officer/admin");
+  redirect("/officer/admin");
 }

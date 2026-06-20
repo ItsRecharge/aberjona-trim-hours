@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Settings, Plug, ScrollText, AlertTriangle } from "lucide-react";
 import { requireUser } from "@/lib/current-user";
+import { isOpsConsoleEnabled } from "@/lib/ops-access";
 
 const CARDS = [
   {
@@ -32,6 +33,9 @@ const CARDS = [
 
 export default async function AdminPage() {
   await requireUser("officer");
+  const cards = isOpsConsoleEnabled()
+    ? [...CARDS, { href: "/officer/ops", title: "Operations console", desc: "Unlock terminal-grade admin tools.", icon: Settings }]
+    : CARDS;
 
   return (
     <div className="space-y-6">
@@ -41,7 +45,7 @@ export default async function AdminPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {CARDS.map((c) => (
+        {cards.map((c) => (
           <Link
             key={c.href}
             href={c.href}

@@ -7,6 +7,7 @@ import { hoursEarnedForUser } from "@/lib/services/member-service";
 import { hoursHistoryForUser } from "@/lib/services/history-service";
 import { getYearlyGoal } from "@/lib/services/chapter-service";
 import { hoursRemaining } from "@/lib/hours";
+import { isBootstrapProtected } from "@/lib/services/bootstrap-service";
 import { ProgressBar } from "@/components/ProgressBar";
 import { SubmitButton } from "@/components/SubmitButton";
 import { adjustHoursAction, setActiveAction, setRoleAction } from "@/actions/roster";
@@ -33,6 +34,7 @@ export default async function MemberDetailPage({
     hoursHistoryForUser(member.id),
   ]);
   const isSelf = member.id === officer.id;
+  const bootstrapProtected = isBootstrapProtected(member);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -50,6 +52,7 @@ export default async function MemberDetailPage({
           {member.graduationYear ? ` · Class of ${member.graduationYear}` : ""} ·{" "}
           <span className="capitalize">{member.role}</span>
           {member.deactivatedAt ? " · inactive" : ""}
+          {bootstrapProtected ? " · bootstrap admin" : ""}
         </p>
       </div>
 
@@ -131,6 +134,11 @@ export default async function MemberDetailPage({
       {!isSelf && (
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Manage</h2>
+          {bootstrapProtected ? (
+            <p className="mb-4 text-sm text-amber-700">
+              This is the bootstrap officer account and is protected for the first year.
+            </p>
+          ) : null}
           <div className="flex flex-wrap gap-3">
             <form action={setRoleAction}>
               <input type="hidden" name="userId" value={member.id} />
@@ -141,6 +149,7 @@ export default async function MemberDetailPage({
               />
               <button
                 type="submit"
+                disabled={bootstrapProtected}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 {member.role === "officer" ? "Demote to member" : "Promote to officer"}
@@ -155,6 +164,7 @@ export default async function MemberDetailPage({
               />
               <button
                 type="submit"
+                disabled={bootstrapProtected}
                 className={`rounded-md border px-4 py-2 text-sm font-semibold transition ${
                   member.deactivatedAt
                     ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"

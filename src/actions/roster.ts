@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { adjustHoursSchema } from "@/lib/validation";
 import {
   createAdjustment,
+  BootstrapOfficerProtectionError,
   setMemberActive,
   setMemberRole,
 } from "@/lib/services/roster-service";
@@ -75,7 +76,15 @@ export async function setRoleAction(formData: FormData): Promise<void> {
     redirect(memberPath(userId));
   }
 
-  await setMemberRole(userId, role);
+  try {
+    await setMemberRole(userId, role);
+  } catch (err) {
+    if (err instanceof BootstrapOfficerProtectionError) {
+      await setFlash("warning", err.message);
+      redirect(memberPath(userId));
+    }
+    throw err;
+  }
   await recordAudit({
     actor: officer,
     action: role === "officer" ? "roster.promote" : "roster.demote",
@@ -98,7 +107,15 @@ export async function setActiveAction(formData: FormData): Promise<void> {
     redirect(memberPath(userId));
   }
 
-  await setMemberActive(userId, active);
+  try {
+    await setMemberActive(userId, active);
+  } catch (err) {
+    if (err instanceof BootstrapOfficerProtectionError) {
+      await setFlash("warning", err.message);
+      redirect(memberPath(userId));
+    }
+    throw err;
+  }
   await recordAudit({
     actor: officer,
     action: active ? "roster.reactivate" : "roster.deactivate",

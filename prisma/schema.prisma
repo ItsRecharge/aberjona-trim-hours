@@ -17,6 +17,7 @@ model User {
   pendingEmail    String? // requested new email, awaiting verification
   passwordHash    String
   role            String    @default("member") // "member" | "officer"
+  isBootstrapOfficer Boolean @default(false)
   graduationYear  Int? // class year, for reporting and rollover
   deactivatedAt   DateTime? // set when an officer removes a member; blocks login
   emailVerifiedAt DateTime?

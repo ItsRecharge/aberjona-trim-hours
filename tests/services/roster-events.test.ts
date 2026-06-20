@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { truncateAll } from "../helpers/db";
 import { hashPassword, verifyCredentials } from "@/lib/services/auth-service";
 import {
+  BootstrapOfficerProtectionError,
   createAdjustment,
   setMemberActive,
   setMemberRole,
@@ -27,6 +28,21 @@ async function makeOfficer() {
       email: "o@test.local",
       passwordHash: await hashPassword("password123"),
       role: "officer",
+      isBootstrapOfficer: false,
+      emailVerifiedAt: new Date(),
+    },
+  });
+}
+async function makeBootstrapOfficer(createdAt = new Date()) {
+  return db.user.create({
+    data: {
+      firstName: "B",
+      lastName: "O",
+      email: "bo@test.local",
+      passwordHash: await hashPassword("password123"),
+      role: "officer",
+      isBootstrapOfficer: true,
+      createdAt,
       emailVerifiedAt: new Date(),
     },
   });
@@ -39,6 +55,7 @@ async function makeMember(email = "m@test.local") {
       email,
       passwordHash: await hashPassword("password123"),
       role: "member",
+      isBootstrapOfficer: false,
       emailVerifiedAt: new Date(),
     },
   });
@@ -102,6 +119,36 @@ describe("roster management", () => {
     await setMemberRole(member.id, "officer");
     const updated = await db.user.findUnique({ where: { id: member.id } });
     expect(updated?.role).toBe("officer");
+  });
+
+  it("protects the bootstrap officer during the first year", async () => {
+    const createdAt = new Date();
+    createdAt.setUTCMonth(createdAt.getUTCMonth() - 6);
+    const bootstrap = await makeBootstrapOfficer(createdAt);
+
+    await expect(setMemberRole(bootstrap.id, "member")).rejects.toBeInstanceOf(
+      BootstrapOfficerProtectionError,
+    );
+    await expect(setMemberActive(bootstrap.id, false)).rejects.toBeInstanceOf(
+      BootstrapOfficerProtectionError,
+    );
+
+    const unchanged = await db.user.findUnique({ where: { id: bootstrap.id } });
+    expect(unchanged?.role).toBe("officer");
+    expect(unchanged?.deactivatedAt).toBeNull();
+  });
+
+  it("allows bootstrap officer changes after the first year", async () => {
+    const createdAt = new Date();
+    createdAt.setUTCFullYear(createdAt.getUTCFullYear() - 2);
+    const bootstrap = await makeBootstrapOfficer(createdAt);
+
+    await setMemberRole(bootstrap.id, "member");
+    await setMemberActive(bootstrap.id, false);
+
+    const updated = await db.user.findUnique({ where: { id: bootstrap.id } });
+    expect(updated?.role).toBe("member");
+    expect(updated?.deactivatedAt).not.toBeNull();
   });
 });
 

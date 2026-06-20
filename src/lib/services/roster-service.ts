@@ -2,6 +2,24 @@ import type { HourReport } from "@prisma/client";
 import { db } from "../db";
 import { revokeAllUserSessions } from "./session-service";
 import type { Role } from "../constants";
+import { isBootstrapProtected } from "./bootstrap-service";
+
+export class BootstrapOfficerProtectionError extends Error {
+  constructor() {
+    super("The bootstrap officer cannot be changed during the first year.");
+    this.name = "BootstrapOfficerProtectionError";
+  }
+}
+
+async function assertBootstrapOfficerEditable(userId: number): Promise<void> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { createdAt: true, isBootstrapOfficer: true },
+  });
+  if (user && isBootstrapProtected(user)) {
+    throw new BootstrapOfficerProtectionError();
+  }
+}
 
 /**
  * Records an officer hours adjustment as a pre-approved HourReport. `hours` may
@@ -28,11 +46,17 @@ export async function createAdjustment(input: {
 }
 
 export async function setMemberRole(userId: number, role: Role): Promise<void> {
+  if (role === "member" || role === "officer") {
+    await assertBootstrapOfficerEditable(userId);
+  }
   await db.user.update({ where: { id: userId }, data: { role } });
 }
 
 /** Deactivating a member also revokes their sessions so they're logged out. */
 export async function setMemberActive(userId: number, active: boolean): Promise<void> {
+  if (!active) {
+    await assertBootstrapOfficerEditable(userId);
+  }
   await db.user.update({
     where: { id: userId },
     data: { deactivatedAt: active ? null : new Date() },

@@ -18,13 +18,13 @@ export async function yearEndResetAction(formData: FormData): Promise<void> {
 
   if (!acknowledged) {
     await setFlash("danger", "Please tick the acknowledgement box.");
-    redirect("/officer/reset");
+    redirect("/officer/admin");
   }
 
   const passwordOk = await bcrypt.compare(password, officer.passwordHash);
   if (!passwordOk) {
     await setFlash("danger", "Incorrect password — reset aborted.");
-    redirect("/officer/reset");
+    redirect("/officer/admin");
   }
 
   // Re-count server-side so a stale phrase from the page can't bypass the gate.
@@ -34,7 +34,7 @@ export async function yearEndResetAction(formData: FormData): Promise<void> {
       "danger",
       `Confirmation phrase didn't match. Type exactly: ${resetPhrase(memberCount)}`,
     );
-    redirect("/officer/reset");
+    redirect("/officer/admin");
   }
 
   const summary = await runYearEndReset();

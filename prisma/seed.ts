@@ -30,6 +30,7 @@ async function main() {
         email,
         passwordHash: await bcrypt.hash(password, 12),
         role: "officer",
+        isBootstrapOfficer: true,
         emailVerifiedAt: new Date(), // bootstrap account skips verification
       },
     });

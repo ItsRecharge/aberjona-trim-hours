@@ -6,6 +6,8 @@ const envSchema = z.object({
     .string()
     .min(16, "SESSION_SECRET must be at least 16 characters (openssl rand -base64 32)"),
   APP_URL: z.string().url().default("http://localhost:3000"),
+  OPS_CONSOLE_ENABLED: z.string().optional(),
+  OPS_ADMIN_EMAILS: z.string().optional(),
 
   // Optional groups — features degrade to no-ops when unset
   GMAIL_USER: z.string().optional(),

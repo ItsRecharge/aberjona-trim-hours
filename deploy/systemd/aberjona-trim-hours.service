@@ -1,0 +1,44 @@
+[Unit]
+Description=Aberjona Tri-M Hours (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=musicserver
+Group=musicserver
+WorkingDirectory=/home/musicserver/aberjona-trim-hours
+EnvironmentFile=/home/musicserver/aberjona-trim-hours/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+# If Node is installed via nvm, include its bin path.
+Environment=PATH=/home/musicserver/.nvm/versions/node/v24.17.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+
+# Build once manually before first start: npm run build
+ExecStart=/usr/bin/env npm run start
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+# Node/V8 JIT needs RW->RX memory permission changes.
+MemoryDenyWriteExecute=false
+SystemCallArchitectures=native
+# Next.js startup queries local interfaces (uv_interface_addresses), which needs AF_NETLINK.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+ReadWritePaths=/home/musicserver/aberjona-trim-hours/data
+ReadOnlyPaths=/home/musicserver/aberjona-trim-hours
+
+[Install]
+WantedBy=multi-user.target

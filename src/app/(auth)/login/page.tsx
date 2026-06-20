@@ -3,6 +3,9 @@ import { AuthShell } from "@/components/AuthShell";
 import { isFirstRun } from "@/lib/services/setup-service";
 import { LoginForm } from "./LoginForm";
 
+// isFirstRun() queries the DB per-request; searchParams are always dynamic.
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage({
   searchParams,
 }: {
