@@ -12,11 +12,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col" suppressHydrationWarning>
+      {/* pb-11 reserves space for the fixed attribution bar so nothing sits under it. */}
+      <body className="flex min-h-screen flex-col pb-11" suppressHydrationWarning>
         <div className="flex-1">{children}</div>
-        <footer className="sticky bottom-0 z-30 border-t-2 border-indigo-600 bg-[#1d2d35] py-3 text-center text-sm font-semibold tracking-wide text-white">
+        <footer className="fixed inset-x-0 bottom-0 z-30 flex h-11 items-center justify-center border-t-2 border-indigo-600 bg-[#1d2d35] text-center text-sm font-semibold tracking-wide text-white">
           Designed &amp; built by{" "}
-          <span className="font-bold text-yellow-400">Neel Bansal</span>
+          <span className="ml-1 font-bold text-yellow-400">Neel Bansal</span>
         </footer>
       </body>
     </html>

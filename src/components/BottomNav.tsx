@@ -10,7 +10,7 @@ export function BottomNav({ variant }: { variant: "member" | "officer" }) {
   const items = variant === "officer" ? OFFICER_NAV : MEMBER_NAV;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-black/10 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_6px_rgba(0,0,0,0.08)] md:hidden">
+    <nav className="fixed inset-x-0 bottom-11 z-40 flex border-t border-black/10 bg-white shadow-[0_-1px_6px_rgba(0,0,0,0.08)] md:hidden">
       {items.map((item) => {
         const active =
           pathname === item.href || pathname.startsWith(`${item.href}/`);

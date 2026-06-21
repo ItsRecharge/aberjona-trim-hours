@@ -49,7 +49,7 @@ export default async function MemberLayout({
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:py-8 md:pb-8">
+      <main className="mx-auto max-w-5xl px-4 py-6 pb-32 sm:py-8 md:pb-8">
         <FlashMessages messages={flash} />
         {children}
       </main>

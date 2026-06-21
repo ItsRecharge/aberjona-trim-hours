@@ -18,7 +18,7 @@ export default async function OfficerLayout({
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar (phones use the top bar + bottom bar) */}
-      <aside className="sticky top-0 hidden h-screen w-[220px] flex-col bg-[#1d2d35] text-white md:flex">
+      <aside className="sticky top-0 hidden h-[calc(100vh-2.75rem)] w-[220px] flex-col bg-[#1d2d35] text-white md:flex">
         <div className="flex items-center gap-2 px-5 py-5 text-sm font-bold tracking-wide">
           <Star className="h-5 w-5 text-yellow-400" />
           Officer Panel
@@ -61,7 +61,7 @@ export default async function OfficerLayout({
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-8">
+        <main className="flex-1 px-4 py-6 pb-32 sm:px-6 sm:py-8 md:pb-8">
           <div className="mx-auto max-w-4xl">
             <FlashMessages messages={flash} />
             {children}
