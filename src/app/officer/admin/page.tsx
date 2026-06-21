@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, Plug, ScrollText, AlertTriangle, Users } from "lucide-react";
+import { Settings, Plug, ScrollText, AlertTriangle, Users, Send } from "lucide-react";
 import { requireUser } from "@/lib/current-user";
 import { isOpsConsoleEnabled } from "@/lib/ops-access";
 
@@ -21,6 +21,12 @@ const CARDS = [
     title: "Integrations",
     desc: "Email (Gmail) and Google Sheets backup credentials.",
     icon: Plug,
+  },
+  {
+    href: "/officer/email-test",
+    title: "Email test",
+    desc: "Send a sample of any email template to check delivery.",
+    icon: Send,
   },
   {
     href: "/officer/audit",

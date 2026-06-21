@@ -50,10 +50,18 @@ export async function signupWithInvite(params: {
         },
       });
 
-      await tx.inviteToken.update({
-        where: { id: invite.id },
-        data: { useCount: { increment: 1 } },
-      });
+      // This use either bumps the count or, if it exhausts a limited invite,
+      // removes it entirely so the spent link disappears from the roster.
+      const exhaustsInvite =
+        invite.maxUses !== null && invite.useCount + 1 >= invite.maxUses;
+      if (exhaustsInvite) {
+        await tx.inviteToken.delete({ where: { id: invite.id } });
+      } else {
+        await tx.inviteToken.update({
+          where: { id: invite.id },
+          data: { useCount: { increment: 1 } },
+        });
+      }
 
       const verificationToken = await issueAuthToken(user.id, "email_verification", tx);
 

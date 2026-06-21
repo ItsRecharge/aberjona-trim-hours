@@ -10,6 +10,11 @@ function appUrl(): string {
   return getEnv().APP_URL.replace(/\/$/, "");
 }
 
+/** Standard subject prefix for every email: "Tri-M Hours - <specific>". */
+function subject(specific: string): string {
+  return `Tri-M Hours - ${specific}`;
+}
+
 function layout(heading: string, bodyHtml: string, cta?: { label: string; url: string }) {
   const button = cta
     ? `<a href="${cta.url}" style="display:inline-block;background:#3949ab;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px;margin:18px 0;">${cta.label}</a>`
@@ -35,7 +40,7 @@ export function verificationEmail(
 ): EmailContent {
   const url = `${baseUrl}/verify-email?token=${token}`;
   return {
-    subject: "Verify your Aberjona Tri-M account",
+    subject: subject("Verify your email"),
     html: layout(
       `Welcome, ${name}!`,
       `<p>Confirm your email address to activate your chapter account. This link expires in 48 hours.</p>`,
@@ -52,7 +57,7 @@ export function emailChangeEmail(
 ): EmailContent {
   const url = `${baseUrl}/verify-email-change?token=${token}`;
   return {
-    subject: "Confirm your new Aberjona Tri-M email",
+    subject: subject("Confirm your new email"),
     html: layout(
       `Confirm your new email`,
       `<p>Hi ${name}, confirm this address to make it the new sign-in email for your account. This link expires in 48 hours. If you didn't request this, you can ignore it — your current email stays in place.</p>`,
@@ -69,7 +74,7 @@ export function passwordResetEmail(
 ): EmailContent {
   const url = `${baseUrl}/reset-password?token=${token}`;
   return {
-    subject: "Reset your Aberjona Tri-M password",
+    subject: subject("Reset your password"),
     html: layout(
       `Password reset`,
       `<p>Hi ${name}, we received a request to reset your password. This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>`,
@@ -79,15 +84,20 @@ export function passwordResetEmail(
   };
 }
 
-export function inviteEmail(link: string, expiresAt: Date): EmailContent {
+export function inviteEmail(
+  link: string,
+  expiresAt: Date,
+  inviterName: string,
+  chapterName: string,
+): EmailContent {
   return {
-    subject: "You're invited to join the Aberjona Tri-M Hours Log",
+    subject: subject(`You're invited to ${chapterName}`),
     html: layout(
       `You've been invited`,
-      `<p>An officer has invited you to join the chapter's hours log. Use the link below to create your account. The invite expires on ${expiresAt.toLocaleDateString()}.</p>`,
+      `<p><strong>${inviterName}</strong> invited you to create an account for <strong>${chapterName}</strong>. Use the link below to get started. The invite expires on ${expiresAt.toLocaleDateString()}.</p>`,
       { label: "Create Your Account", url: link },
     ),
-    text: `You've been invited to join the Aberjona Tri-M Hours Log.\n\nCreate your account (expires ${expiresAt.toLocaleDateString()}):\n${link}`,
+    text: `${inviterName} invited you to create an account for ${chapterName}.\n\nCreate your account (expires ${expiresAt.toLocaleDateString()}):\n${link}`,
   };
 }
 
@@ -98,7 +108,7 @@ export function eventPostedEmail(
 ): EmailContent {
   const url = `${baseUrl}/member/events`;
   return {
-    subject: `New volunteer event: ${eventTitle}`,
+    subject: subject(`New event: ${eventTitle}`),
     html: layout(
       `New event posted`,
       `<p><strong>${eventTitle}</strong> is now open for sign-ups.</p><p>When: ${whenLabel}</p>`,
@@ -116,7 +126,7 @@ export function requestDecisionEmail(
   const url = `${baseUrl}/member/dashboard`;
   return approved
     ? {
-        subject: `Your event request was approved: ${eventTitle}`,
+        subject: subject(`Event request approved: ${eventTitle}`),
         html: layout(
           `Request approved`,
           `<p>Your requested event <strong>${eventTitle}</strong> has been approved and is now active for sign-ups.</p>`,
@@ -125,7 +135,7 @@ export function requestDecisionEmail(
         text: `Your event request "${eventTitle}" was approved and is now active.\n${url}`,
       }
     : {
-        subject: `Update on your event request: ${eventTitle}`,
+        subject: subject(`Event request update: ${eventTitle}`),
         html: layout(
           `Request not approved`,
           `<p>Your requested event <strong>${eventTitle}</strong> was not approved. Reach out to an officer if you have questions.</p>`,
@@ -143,7 +153,7 @@ export function hoursCreditedEmail(
 ): EmailContent {
   const url = `${baseUrl}/member/dashboard`;
   return {
-    subject: `${hours} service hours credited`,
+    subject: subject(`${hours} service hours credited`),
     html: layout(
       `Hours credited`,
       `<p>Hi ${name}, you've been credited <strong>${hours} hour${hours === 1 ? "" : "s"}</strong> for attending <strong>${eventTitle}</strong>.</p>`,
@@ -164,7 +174,7 @@ export function hoursSummaryEmail(
   const url = `${baseUrl}/member/events`;
   if (remaining <= 0) {
     return {
-      subject: "You've completed your service hours 🎉",
+      subject: subject("You've completed your service hours 🎉"),
       html: layout(
         `You're all set, ${name}!`,
         `<p>You've earned <strong>${earned} of ${goal}</strong> service hours this year — goal met. Thank you for your service!</p>`,
@@ -174,7 +184,7 @@ export function hoursSummaryEmail(
     };
   }
   return {
-    subject: `Service hours reminder — ${remaining} to go`,
+    subject: subject(`Service hours reminder — ${remaining} to go`),
     html: layout(
       `Hours reminder for ${name}`,
       `<p>You've earned <strong>${earned} of ${goal}</strong> service hours so far. You still need <strong>${remaining} more</strong> before <strong>${deadlineLabel}</strong>.</p><p>Browse upcoming events to sign up and finish your hours.</p>`,
@@ -191,7 +201,7 @@ export function newRequestEmail(
 ): EmailContent {
   const url = `${baseUrl}/officer/requests`;
   return {
-    subject: `New event request: ${eventTitle}`,
+    subject: subject(`New event request: ${eventTitle}`),
     html: layout(
       `New event request`,
       `<p><strong>${requesterName}</strong> submitted a new event request: <strong>${eventTitle}</strong>. Review it to approve or deny.</p>`,
@@ -207,7 +217,7 @@ export function eventCancelledEmail(
 ): EmailContent {
   const url = `${baseUrl}/member/events`;
   return {
-    subject: `Cancelled: ${eventTitle}`,
+    subject: subject(`Event cancelled: ${eventTitle}`),
     html: layout(
       `Event cancelled`,
       `<p>Unfortunately <strong>${eventTitle}</strong> has been cancelled. You no longer need to attend. Check the events page for other ways to earn hours.</p>`,
@@ -225,7 +235,7 @@ export function waitlistPromotedEmail(
 ): EmailContent {
   const url = `${baseUrl}/member/events`;
   return {
-    subject: `A spot opened up: ${eventTitle}`,
+    subject: subject(`A spot opened up: ${eventTitle}`),
     html: layout(
       `You're off the waitlist`,
       `<p>Hi ${name}, a spot opened up and you're now <strong>confirmed</strong> for <strong>${eventTitle}</strong> (${slotLabel}).</p>`,
@@ -245,7 +255,7 @@ export function hourReportDecisionEmail(
   const url = `${baseUrl}/member/report-hours`;
   return approved
     ? {
-        subject: `Your hour report was approved (${hours} hrs)`,
+        subject: subject(`Hour report approved (${hours} hrs)`),
         html: layout(
           `Hours approved`,
           `<p>Hi ${name}, your reported hours for <strong>${description}</strong> were approved and <strong>${hours} hour${hours === 1 ? "" : "s"}</strong> added to your total.</p>`,
@@ -254,7 +264,7 @@ export function hourReportDecisionEmail(
         text: `Hi ${name}, your report "${description}" was approved (${hours} hrs).\n${url}`,
       }
     : {
-        subject: `Update on your hour report`,
+        subject: subject("Hour report update"),
         html: layout(
           `Hours not approved`,
           `<p>Hi ${name}, your reported hours for <strong>${description}</strong> were not approved. Reach out to an officer with questions.</p>`,

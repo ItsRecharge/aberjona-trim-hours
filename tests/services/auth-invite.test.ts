@@ -75,7 +75,7 @@ describe("signupWithInvite", () => {
     expect(user?.role).toBe("member");
   });
 
-  it("rejects an exhausted invite", async () => {
+  it("removes a fully-used invite so reuse is rejected", async () => {
     const officer = await makeOfficer();
     const { rawToken } = await createInvite({
       createdById: officer.id,
@@ -90,6 +90,10 @@ describe("signupWithInvite", () => {
       password: "password123",
       rawInviteToken: rawToken,
     });
+
+    // The single-use invite is deleted on first use.
+    expect(await db.inviteToken.count()).toBe(0);
+
     const second = await signupWithInvite({
       firstName: "B",
       lastName: "B",
@@ -97,7 +101,7 @@ describe("signupWithInvite", () => {
       password: "password123",
       rawInviteToken: rawToken,
     });
-    expect(second).toEqual({ ok: false, reason: "invite_exhausted" });
+    expect(second).toEqual({ ok: false, reason: "invalid_invite" });
   });
 
   it("rejects a duplicate email", async () => {

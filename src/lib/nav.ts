@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Mail,
   PlusCircle,
-  Send,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -35,5 +34,4 @@ export const OFFICER_NAV: NavItem[] = [
   { href: "/officer/requests", label: "Requests", short: "Requests", icon: ClipboardList },
   { href: "/officer/members", label: "Members", short: "Members", icon: Users },
   { href: "/officer/invites", label: "Invites", short: "Invites", icon: Mail },
-  { href: "/officer/email-test", label: "Email Test", short: "Email", icon: Send },
 ];

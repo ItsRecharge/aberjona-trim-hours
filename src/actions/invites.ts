@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/current-user";
+import { requireUser, fullName } from "@/lib/current-user";
 import { inviteSchema } from "@/lib/validation";
 import { createInvite, revokeInvite } from "@/lib/services/invite-service";
-import { getPublicBaseUrl } from "@/lib/services/chapter-service";
+import { getChapterSettings, getPublicBaseUrl } from "@/lib/services/chapter-service";
 import { sendMail } from "@/lib/email/mailer";
 import { inviteEmail } from "@/lib/email/templates";
 import { recordAudit } from "@/lib/services/audit-service";
@@ -35,7 +35,11 @@ export async function createInviteAction(formData: FormData): Promise<void> {
   const sendTo = String(formData.get("email") ?? "").trim().toLowerCase();
   if (sendTo) {
     try {
-      await sendMail({ to: sendTo, ...inviteEmail(link, invite.expiresAt) });
+      const chapterName = (await getChapterSettings()).chapterName;
+      await sendMail({
+        to: sendTo,
+        ...inviteEmail(link, invite.expiresAt, fullName(officer), chapterName),
+      });
       await setFlash("success", `Invite created and emailed to ${sendTo}.`);
     } catch {
       await setFlash("warning", "Invite created, but the email failed to send.");

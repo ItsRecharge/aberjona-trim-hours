@@ -51,7 +51,13 @@ export const TEST_TEMPLATES: Record<string, TemplateEntry> = {
   invite: {
     label: "Chapter invite",
     fields: [],
-    build: () => t.inviteEmail("https://example.com/signup?token=sample", days(7)),
+    build: () =>
+      t.inviteEmail(
+        "https://example.com/signup?token=sample",
+        days(7),
+        "An officer",
+        "Aberjona Chapter",
+      ),
   },
   event_posted: {
     label: "New event posted",
