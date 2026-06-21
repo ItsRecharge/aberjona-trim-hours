@@ -11,6 +11,10 @@ import { isBootstrapProtected } from "@/lib/services/bootstrap-service";
 import { ProgressBar } from "@/components/ProgressBar";
 import { SubmitButton } from "@/components/SubmitButton";
 import { adjustHoursAction, setActiveAction, setRoleAction } from "@/actions/roster";
+import {
+  bootstrapEditProfileAction,
+  bootstrapSetPasswordAction,
+} from "@/actions/admin-user";
 import { formatEventDate } from "@/lib/format";
 
 const field =
@@ -136,7 +140,8 @@ export default async function MemberDetailPage({
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Manage</h2>
           {bootstrapProtected ? (
             <p className="mb-4 text-sm text-amber-700">
-              This is the bootstrap officer account and is protected for the first year.
+              This is the bootstrap officer account. Transfer the bootstrap role to
+              another officer before it can be demoted or removed.
             </p>
           ) : null}
           <div className="flex flex-wrap gap-3">
@@ -175,6 +180,66 @@ export default async function MemberDetailPage({
               </button>
             </form>
           </div>
+        </section>
+      )}
+
+      {officer.isBootstrapOfficer && (
+        <section className="rounded-xl border border-indigo-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900">Bootstrap admin — edit user</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            Change this user&apos;s details directly, no links needed. Changing the
+            email or password logs them out of all devices.
+          </p>
+
+          <form action={bootstrapEditProfileAction} className="space-y-4">
+            <input type="hidden" name="userId" value={member.id} />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className={label}>First name</label>
+                <input id="firstName" name="firstName" defaultValue={member.firstName} required className={field} />
+              </div>
+              <div>
+                <label htmlFor="lastName" className={label}>Last name</label>
+                <input id="lastName" name="lastName" defaultValue={member.lastName} className={field} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="email" className={label}>Email</label>
+                <input id="email" name="email" type="email" defaultValue={member.email} required className={field} />
+              </div>
+              <div>
+                <label htmlFor="graduationYear" className={label}>Graduation year</label>
+                <input
+                  id="graduationYear"
+                  name="graduationYear"
+                  type="number"
+                  min="1980"
+                  max="2100"
+                  defaultValue={member.graduationYear ?? ""}
+                  className={field}
+                />
+              </div>
+            </div>
+            <SubmitButton pendingText="Saving…">Save user details</SubmitButton>
+          </form>
+
+          <form action={bootstrapSetPasswordAction} className="mt-6 space-y-4 border-t border-gray-100 pt-6">
+            <input type="hidden" name="userId" value={member.id} />
+            <div>
+              <label htmlFor="password" className={label}>Set new password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                minLength={8}
+                placeholder="At least 8 characters"
+                className={field}
+              />
+            </div>
+            <SubmitButton pendingText="Setting…">Set password</SubmitButton>
+          </form>
         </section>
       )}
     </div>

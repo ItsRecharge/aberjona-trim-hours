@@ -151,6 +151,14 @@ export const profileSchema = z.object({
   graduationYear: graduationYearSchema,
 });
 
+// Bootstrap god-mode: edit any user's identity fields directly.
+export const adminProfileSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(50),
+  lastName: z.string().trim().max(50).default(""),
+  email: emailSchema,
+  graduationYear: graduationYearSchema,
+});
+
 export const adjustHoursSchema = z.object({
   description: z.string().trim().min(1, "Describe the adjustment").max(200),
   date: z

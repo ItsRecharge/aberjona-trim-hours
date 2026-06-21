@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/services/auth-service";
 import { listOfficers } from "@/lib/services/roster-service";
+import { isBootstrapProtected } from "@/lib/services/bootstrap-service";
 import { truncateAll } from "../helpers/db";
 
 async function makeOfficer(
@@ -24,25 +25,25 @@ async function makeOfficer(
 
 beforeEach(() => truncateAll(db));
 
-describe("listOfficers", () => {
-  it("flags the bootstrap officer as protected and leaves others unprotected", async () => {
-    await makeOfficer("Boot", { bootstrap: true }); // created now → within first year
+describe("listOfficers + protection", () => {
+  it("returns every officer with the bootstrap flag", async () => {
+    await makeOfficer("Boot", { bootstrap: true });
     await makeOfficer("Reg");
 
     const officers = await listOfficers();
-    const boot = officers.find((o) => o.firstName === "Boot");
-    const reg = officers.find((o) => o.firstName === "Reg");
-
-    expect(boot?.protectedUntil).toBeInstanceOf(Date);
-    expect(reg?.protectedUntil).toBeNull();
+    expect(officers).toHaveLength(2);
+    expect(officers.find((o) => o.firstName === "Boot")?.isBootstrapOfficer).toBe(true);
+    expect(officers.find((o) => o.firstName === "Reg")?.isBootstrapOfficer).toBe(false);
   });
 
-  it("drops protection once the bootstrap year has passed", async () => {
+  it("protects only the bootstrap officer, regardless of account age", async () => {
     const old = new Date();
-    old.setUTCFullYear(old.getUTCFullYear() - 2);
-    await makeOfficer("Boot", { bootstrap: true, createdAt: old });
+    old.setUTCFullYear(old.getUTCFullYear() - 5);
+    const boot = await makeOfficer("Boot", { bootstrap: true, createdAt: old });
+    const reg = await makeOfficer("Reg");
 
-    const [boot] = await listOfficers();
-    expect(boot.protectedUntil).toBeNull();
+    // Protection is tied to holding the role (until handoff), not to a timer.
+    expect(isBootstrapProtected(boot)).toBe(true);
+    expect(isBootstrapProtected(reg)).toBe(false);
   });
 });

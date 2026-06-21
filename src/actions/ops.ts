@@ -3,12 +3,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { recordAudit } from "@/lib/services/audit-service";
-import { verifyCredentials } from "@/lib/services/auth-service";
-import {
-  requireOpsGrant,
-  requireSuperAdmin,
-  isOpsConsoleEnabled,
-} from "@/lib/ops-access";
+import { verifyPassword } from "@/lib/services/auth-service";
+import { getBootstrapOfficer } from "@/lib/services/bootstrap-service";
+import { requireUser } from "@/lib/current-user";
+import { requireOpsGrant, isOpsConsoleEnabled } from "@/lib/ops-access";
 import { signOpsGrant } from "@/lib/ops-grant";
 import { OPS_GRANT_COOKIE, OPS_GRANT_TTL_SECONDS } from "@/lib/constants";
 import { setFlash } from "@/lib/flash";
@@ -32,7 +30,7 @@ export interface OpsShellState {
 }
 
 export async function requestOpsGrantAction(formData: FormData): Promise<void> {
-  const user = await requireSuperAdmin();
+  const user = await requireUser("officer");
   if (!isOpsConsoleEnabled()) {
     await setFlash("warning", "The operations console is disabled.");
     redirect("/officer/admin");
@@ -50,9 +48,12 @@ export async function requestOpsGrantAction(formData: FormData): Promise<void> {
     redirect("/officer/ops");
   }
 
-  const result = await verifyCredentials(user.email, password);
-  if (!result.ok || result.user.id !== user.id) {
-    await setFlash("danger", "Password re-entry failed.");
+  // The console is visible to every officer, but only the bootstrap officer's
+  // password unlocks it — so we verify against the bootstrap account, not the
+  // current user.
+  const bootstrap = await getBootstrapOfficer();
+  if (!bootstrap || !(await verifyPassword(bootstrap.passwordHash, password))) {
+    await setFlash("danger", "That is not the bootstrap officer's password.");
     redirect("/officer/ops");
   }
 
@@ -74,7 +75,7 @@ export async function requestOpsGrantAction(formData: FormData): Promise<void> {
 }
 
 export async function saveOpsFileAction(formData: FormData): Promise<void> {
-  const user = await requireSuperAdmin();
+  const user = await requireUser("officer");
   await requireOpsGrant(user);
 
   const path = String(formData.get("path") ?? "").trim();
@@ -97,7 +98,7 @@ export async function saveOpsFileAction(formData: FormData): Promise<void> {
 }
 
 export async function runOpsGitAction(formData: FormData): Promise<void> {
-  const user = await requireSuperAdmin();
+  const user = await requireUser("officer");
   await requireOpsGrant(user);
 
   const command = String(formData.get("command") ?? "");
@@ -141,7 +142,7 @@ export async function runOpsShellAction(
   _prev: OpsShellState,
   formData: FormData,
 ): Promise<OpsShellState> {
-  const user = await requireSuperAdmin();
+  const user = await requireUser("officer");
   await requireOpsGrant(user);
 
   const command = String(formData.get("command") ?? "").trim();

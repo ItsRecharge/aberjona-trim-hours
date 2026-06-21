@@ -2,7 +2,7 @@ import type { HourReport } from "@prisma/client";
 import { db } from "../db";
 import { revokeAllUserSessions } from "./session-service";
 import type { Role } from "../constants";
-import { bootstrapProtectionEndsAt, isBootstrapProtected } from "./bootstrap-service";
+import { isBootstrapProtected } from "./bootstrap-service";
 
 export interface OfficerRow {
   id: number;
@@ -12,12 +12,11 @@ export interface OfficerRow {
   deactivatedAt: Date | null;
   isBootstrapOfficer: boolean;
   createdAt: Date;
-  protectedUntil: Date | null;
 }
 
-/** Every officer account, with bootstrap-protection metadata for the admin view. */
+/** Every officer account. The bootstrap officer is protected until the role is handed off. */
 export async function listOfficers(): Promise<OfficerRow[]> {
-  const officers = await db.user.findMany({
+  return db.user.findMany({
     where: { role: "officer" },
     select: {
       id: true,
@@ -30,10 +29,6 @@ export async function listOfficers(): Promise<OfficerRow[]> {
     },
     orderBy: { firstName: "asc" },
   });
-  return officers.map((o) => ({
-    ...o,
-    protectedUntil: isBootstrapProtected(o) ? bootstrapProtectionEndsAt(o) : null,
-  }));
 }
 
 export class BootstrapOfficerProtectionError extends Error {

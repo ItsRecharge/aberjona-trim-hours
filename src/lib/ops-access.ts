@@ -18,10 +18,11 @@ function adminEmails(): Set<string> {
 }
 
 export function isOpsConsoleEnabled(): boolean {
-  return getEnv().OPS_CONSOLE_ENABLED === "true";
+  // On by default; only an explicit OPS_CONSOLE_ENABLED=false disables it.
+  return getEnv().OPS_CONSOLE_ENABLED !== "false";
 }
 
-export function isSuperAdmin(user: Pick<User, "email" | "createdAt" | "isBootstrapOfficer">): boolean {
+export function isSuperAdmin(user: Pick<User, "email" | "isBootstrapOfficer">): boolean {
   return isBootstrapProtected(user) || adminEmails().has(user.email.toLowerCase());
 }
 

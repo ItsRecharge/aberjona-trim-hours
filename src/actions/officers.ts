@@ -11,6 +11,7 @@ import {
   setMemberActive,
 } from "@/lib/services/roster-service";
 import { getPublicBaseUrl } from "@/lib/services/chapter-service";
+import { verifyPassword } from "@/lib/services/auth-service";
 import { recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
 
@@ -97,6 +98,49 @@ export async function setOfficerActiveAction(formData: FormData): Promise<void> 
     targetId: userId,
   });
   await setFlash("info", active ? "Officer reactivated." : "Officer deactivated.");
+  revalidatePath(OFFICERS_PATH);
+  redirect(OFFICERS_PATH);
+}
+
+/**
+ * Hands the bootstrap (master admin) role to another officer. Only the current
+ * bootstrap officer may do this, confirmed with their password. Exactly one
+ * bootstrap officer exists at a time.
+ */
+export async function transferBootstrapAction(formData: FormData): Promise<void> {
+  const officer = await requireUser("officer");
+  if (!officer.isBootstrapOfficer) {
+    await setFlash("danger", "Only the bootstrap officer can transfer the role.");
+    redirect(OFFICERS_PATH);
+  }
+
+  const targetId = Number(formData.get("targetId"));
+  const password = String(formData.get("password") ?? "");
+
+  if (!(await verifyPassword(officer.passwordHash, password))) {
+    await setFlash("danger", "Password confirmation failed.");
+    redirect(OFFICERS_PATH);
+  }
+
+  const target = await db.user.findUnique({ where: { id: targetId } });
+  if (!target || target.role !== "officer" || target.deactivatedAt || target.id === officer.id) {
+    await setFlash("warning", "Pick an active officer to receive the bootstrap role.");
+    redirect(OFFICERS_PATH);
+  }
+
+  await db.$transaction([
+    db.user.update({ where: { id: officer.id }, data: { isBootstrapOfficer: false } }),
+    db.user.update({ where: { id: target.id }, data: { isBootstrapOfficer: true } }),
+  ]);
+
+  await recordAudit({
+    actor: officer,
+    action: "bootstrap.transfer",
+    summary: `Transferred the bootstrap role to ${fullName(target)}`,
+    targetType: "user",
+    targetId: target.id,
+  });
+  await setFlash("success", `${target.firstName} is now the bootstrap officer.`);
   revalidatePath(OFFICERS_PATH);
   redirect(OFFICERS_PATH);
 }

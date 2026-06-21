@@ -25,3 +25,8 @@ export async function verifyCredentials(
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
+
+/** Constant-time check of a plaintext password against a stored hash. */
+export async function verifyPassword(hash: string, password: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}

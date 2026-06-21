@@ -1,18 +1,16 @@
 import type { User } from "@prisma/client";
+import { db } from "../db";
 
-export const BOOTSTRAP_PROTECTION_YEARS = 1;
-
-export function bootstrapProtectionEndsAt(user: Pick<User, "isBootstrapOfficer" | "createdAt">): Date | null {
-  if (!user.isBootstrapOfficer) return null;
-  const end = new Date(user.createdAt);
-  end.setUTCFullYear(end.getUTCFullYear() + BOOTSTRAP_PROTECTION_YEARS);
-  return end;
+/**
+ * The bootstrap officer is protected from demotion/removal for as long as they
+ * hold the role — until they transfer it to another officer (see
+ * transferBootstrapAction). Protection is simply "are you the bootstrap officer".
+ */
+export function isBootstrapProtected(user: Pick<User, "isBootstrapOfficer">): boolean {
+  return user.isBootstrapOfficer;
 }
 
-export function isBootstrapProtected(
-  user: Pick<User, "isBootstrapOfficer" | "createdAt">,
-  now = new Date(),
-): boolean {
-  const end = bootstrapProtectionEndsAt(user);
-  return end !== null && now < end;
+/** The current bootstrap officer account, or null if somehow none is flagged. */
+export function getBootstrapOfficer(): Promise<User | null> {
+  return db.user.findFirst({ where: { isBootstrapOfficer: true } });
 }

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ChevronRight, FileText, Folder, GitBranch } from "lucide-react";
 import { requestOpsGrantAction, runOpsGitAction, saveOpsFileAction } from "@/actions/ops";
 import { requireUser } from "@/lib/current-user";
-import { isOpsConsoleEnabled, isSuperAdmin, hasValidOpsGrant } from "@/lib/ops-access";
+import { isOpsConsoleEnabled, hasValidOpsGrant } from "@/lib/ops-access";
 import { SubmitButton } from "@/components/SubmitButton";
 import { OpsSettingsModal } from "@/components/OpsSettingsModal";
 import { OpsTerminal } from "@/components/OpsTerminal";
@@ -25,7 +25,6 @@ export default async function OpsPage({
   if (!isOpsConsoleEnabled()) notFound();
 
   const user = await requireUser("officer");
-  if (!isSuperAdmin(user)) redirect("/officer/admin");
 
   const params = await searchParams;
   const granted = await hasValidOpsGrant(user);

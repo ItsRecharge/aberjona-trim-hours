@@ -121,10 +121,8 @@ describe("roster management", () => {
     expect(updated?.role).toBe("officer");
   });
 
-  it("protects the bootstrap officer during the first year", async () => {
-    const createdAt = new Date();
-    createdAt.setUTCMonth(createdAt.getUTCMonth() - 6);
-    const bootstrap = await makeBootstrapOfficer(createdAt);
+  it("protects the bootstrap officer while they hold the role", async () => {
+    const bootstrap = await makeBootstrapOfficer();
 
     await expect(setMemberRole(bootstrap.id, "member")).rejects.toBeInstanceOf(
       BootstrapOfficerProtectionError,
@@ -138,10 +136,13 @@ describe("roster management", () => {
     expect(unchanged?.deactivatedAt).toBeNull();
   });
 
-  it("allows bootstrap officer changes after the first year", async () => {
-    const createdAt = new Date();
-    createdAt.setUTCFullYear(createdAt.getUTCFullYear() - 2);
-    const bootstrap = await makeBootstrapOfficer(createdAt);
+  it("allows changes once the bootstrap role is handed off", async () => {
+    const bootstrap = await makeBootstrapOfficer();
+    // Handoff (what transferBootstrapAction does) clears the flag and ends protection.
+    await db.user.update({
+      where: { id: bootstrap.id },
+      data: { isBootstrapOfficer: false },
+    });
 
     await setMemberRole(bootstrap.id, "member");
     await setMemberActive(bootstrap.id, false);

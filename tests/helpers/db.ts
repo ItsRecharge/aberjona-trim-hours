@@ -11,5 +11,6 @@ export async function truncateAll(db: PrismaClient): Promise<void> {
   await db.event.deleteMany();
   await db.auditLog.deleteMany();
   await db.integrationSettings.deleteMany();
+  await db.chapterSettings.deleteMany();
   await db.user.deleteMany();
 }
