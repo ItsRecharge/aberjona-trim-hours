@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/current-user";
-import { getEnv } from "@/lib/env";
 import { inviteSchema } from "@/lib/validation";
 import { createInvite, revokeInvite } from "@/lib/services/invite-service";
+import { getPublicBaseUrl } from "@/lib/services/chapter-service";
 import { sendMail } from "@/lib/email/mailer";
 import { inviteEmail } from "@/lib/email/templates";
 import { recordAudit } from "@/lib/services/audit-service";
@@ -30,7 +30,7 @@ export async function createInviteAction(formData: FormData): Promise<void> {
     maxUses: parsed.data.maxUses,
   });
 
-  const link = `${getEnv().APP_URL.replace(/\/$/, "")}/signup?invite=${rawToken}`;
+  const link = `${await getPublicBaseUrl()}/signup?invite=${rawToken}`;
 
   const sendTo = String(formData.get("email") ?? "").trim().toLowerCase();
   if (sendTo) {
