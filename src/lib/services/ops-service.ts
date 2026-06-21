@@ -164,15 +164,24 @@ export async function runShellCommand(
 }
 
 async function runGit(args: string[]): Promise<string> {
-  const result = await execFileAsync("git", args, {
-    cwd: PROJECT_ROOT,
-    timeout: 30_000,
-    maxBuffer: 128 * 1024,
-    encoding: "utf8",
-  });
-  const stdout = typeof result === "string" ? result : result.stdout ?? "";
-  const stderr = typeof result === "string" ? "" : result.stderr ?? "";
-  return truncateOutput([stdout, stderr].filter(Boolean).join("\n"));
+  try {
+    const result = await execFileAsync("git", args, {
+      cwd: PROJECT_ROOT,
+      timeout: 30_000,
+      maxBuffer: 128 * 1024,
+      encoding: "utf8",
+    });
+    const stdout = typeof result === "string" ? result : result.stdout ?? "";
+    const stderr = typeof result === "string" ? "" : result.stderr ?? "";
+    return truncateOutput([stdout, stderr].filter(Boolean).join("\n"));
+  } catch (err) {
+    // A non-zero git exit (e.g. non-fast-forward, or a read-only .git) rejects.
+    // Surface its output instead of throwing so the button shows the error.
+    const e = err as { stdout?: string; stderr?: string; message?: string };
+    const body =
+      [e.stdout, e.stderr].filter(Boolean).join("\n") || e.message || "git command failed.";
+    return truncateOutput(body);
+  }
 }
 
 export async function gitHead(): Promise<{ branch: string; shortHead: string }> {

@@ -45,12 +45,11 @@ MemoryDenyWriteExecute=false
 SystemCallArchitectures=native
 # Next.js startup queries local interfaces (uv_interface_addresses), which needs AF_NETLINK.
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
-# Writable for the runtime DB and for the on-restart build (.next + prisma client).
-# src/ and the rest of the tree stay read-only via ReadOnlyPaths below.
-ReadWritePaths=/home/musicserver/aberjona-trim-hours/data
-ReadWritePaths=/home/musicserver/aberjona-trim-hours/.next
-ReadWritePaths=/home/musicserver/aberjona-trim-hours/node_modules
-ReadOnlyPaths=/home/musicserver/aberjona-trim-hours
+# The ops console edits files and runs git (fetch/pull), so the whole project dir
+# must be writable. The rest of the system stays read-only (ProtectSystem=strict)
+# and privilege escalation stays blocked (NoNewPrivileges) — this only widens writes
+# to the app's own directory, nothing else.
+ReadWritePaths=/home/musicserver/aberjona-trim-hours
 
 [Install]
 WantedBy=multi-user.target
