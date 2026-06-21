@@ -1,4 +1,4 @@
-# Aberjona Tri-M Hours Log — User Guide
+ # Aberjona Tri-M Hours Log — User Guide
 
 A complete, screenshot-by-screenshot tour of the chapter's volunteer-hours tracking
 app. Every screenshot below was taken from the running app using the demo accounts.

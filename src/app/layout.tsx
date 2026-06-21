@@ -14,8 +14,9 @@ export default function RootLayout({
     <html lang="en">
       <body className="flex min-h-screen flex-col" suppressHydrationWarning>
         <div className="flex-1">{children}</div>
-        <footer className="bg-white py-3 text-center text-sm text-gray-500">
-          Made by Neel Bansal
+        <footer className="border-t-2 border-indigo-600 bg-[#1d2d35] py-4 text-center text-sm font-semibold tracking-wide text-white">
+          Designed &amp; built by{" "}
+          <span className="font-bold text-yellow-400">Neel Bansal</span>
         </footer>
       </body>
     </html>
