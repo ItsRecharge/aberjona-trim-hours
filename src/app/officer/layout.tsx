@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Star, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { getFlash } from "@/lib/flash";
 import { FlashMessages } from "@/components/FlashMessages";
 import { AccountControls } from "@/components/AccountControls";
 import { BottomNav } from "@/components/BottomNav";
+import { BrandLogo } from "@/components/BrandLogo";
 import { OFFICER_NAV } from "@/lib/nav";
 
 export default async function OfficerLayout({
@@ -19,9 +20,8 @@ export default async function OfficerLayout({
     <div className="flex min-h-screen">
       {/* Desktop sidebar (phones use the top bar + bottom bar) */}
       <aside className="sticky top-0 hidden h-[calc(100vh-2.75rem)] w-[220px] flex-col bg-[#1d2d35] text-white md:flex">
-        <div className="flex items-center gap-2 px-5 py-5 text-sm font-bold tracking-wide">
-          <Star className="h-5 w-5 text-yellow-400" />
-          Officer Panel
+        <div className="px-4 py-5">
+          <BrandLogo href="/officer/dashboard" imgClassName="h-8 w-auto" />
         </div>
         <nav className="flex-1 space-y-1 px-3">
           {OFFICER_NAV.map((item) => (
@@ -51,10 +51,7 @@ export default async function OfficerLayout({
       <div className="flex flex-1 flex-col">
         {/* Mobile top bar: brand left, account flush right */}
         <header className="flex items-start justify-between gap-3 bg-[#1d2d35] px-4 py-3 text-white md:hidden">
-          <div className="flex items-center gap-2 pt-1 text-sm font-bold tracking-wide">
-            <Star className="h-5 w-5 text-yellow-400" />
-            Officer Panel
-          </div>
+          <BrandLogo href="/officer/dashboard" imgClassName="h-7 w-auto" />
           <div className="flex flex-col items-end gap-1 text-sm">
             <span className="font-medium">{fullName(user)}</span>
             <AccountControls className="text-white/85" align="end" />

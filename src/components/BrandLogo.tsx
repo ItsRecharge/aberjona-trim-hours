@@ -1,0 +1,28 @@
+import Link from "next/link";
+
+/**
+ * The Tri-M logo as a clickable "home" button. Sits on a white chip so the
+ * full-color logo stays legible on the app's dark headers/sidebar.
+ */
+export function BrandLogo({
+  href,
+  className = "",
+  imgClassName = "h-7 w-auto",
+}: {
+  href: string;
+  className?: string;
+  imgClassName?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label="Go to dashboard"
+      className={`inline-flex shrink-0 ${className}`}
+    >
+      <span className="rounded-lg bg-white px-2 py-1 shadow-sm">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/tri-m-logo.png" alt="Tri-M Music Honor Society" className={imgClassName} />
+      </span>
+    </Link>
+  );
+}

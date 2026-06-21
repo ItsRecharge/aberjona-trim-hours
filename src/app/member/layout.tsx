@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Music } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { getFlash } from "@/lib/flash";
 import { FlashMessages } from "@/components/FlashMessages";
 import { AccountControls } from "@/components/AccountControls";
 import { BottomNav } from "@/components/BottomNav";
+import { BrandLogo } from "@/components/BrandLogo";
 import { MEMBER_NAV } from "@/lib/nav";
 
 export default async function MemberLayout({
@@ -19,13 +19,7 @@ export default async function MemberLayout({
     <div className="min-h-screen">
       <header className="bg-indigo-700 text-white shadow">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <Link
-            href="/member/dashboard"
-            className="flex shrink-0 items-center gap-2 font-bold"
-          >
-            <Music className="h-5 w-5" />
-            <span className="tracking-wide whitespace-nowrap">Tri-M Hours Log</span>
-          </Link>
+          <BrandLogo href="/member/dashboard" imgClassName="h-8 w-auto" />
 
           {/* Desktop nav (phones use the bottom bar) */}
           <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
