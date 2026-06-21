@@ -8,6 +8,7 @@ import { setFlash } from "@/lib/flash";
 import { rateLimit } from "@/lib/rate-limit";
 import { requestIp } from "@/lib/request-ip";
 import { fullName, getCurrentUser } from "@/lib/current-user";
+import { endImpersonationIfActive } from "@/lib/impersonation";
 import type { Role } from "@/lib/constants";
 
 export interface AuthFormState {
@@ -61,12 +62,20 @@ export async function loginAction(
 }
 
 export async function logoutAction(): Promise<void> {
+  // While impersonating, "Log out" just returns the admin to their own session.
+  if (await endImpersonationIfActive()) {
+    redirect("/officer/officers");
+  }
   await destroySession();
   await setFlash("info", "You have been logged out.");
   redirect("/");
 }
 
 export async function logoutEverywhereAction(): Promise<void> {
+  // Same here — don't nuke the impersonated user's sessions; just step back out.
+  if (await endImpersonationIfActive()) {
+    redirect("/officer/officers");
+  }
   const user = await getCurrentUser();
   if (user) await destroyAllSessions(user.id);
   await setFlash("info", "Logged out on all devices.");

@@ -68,6 +68,11 @@ export async function setRoleAction(formData: FormData): Promise<void> {
   const userId = Number(formData.get("userId"));
   const role = String(formData.get("role")) as Role;
 
+  // Promotions/demotions are a bootstrap-officer power.
+  if (!officer.isBootstrapOfficer) {
+    await setFlash("warning", "Only the bootstrap officer can change roles.");
+    redirect(memberPath(userId));
+  }
   if (userId === officer.id) {
     await setFlash("warning", "You can't change your own role.");
     redirect(memberPath(userId));

@@ -28,6 +28,9 @@ export type ReportStatus = (typeof REPORT_STATUSES)[number];
 export const SESSION_COOKIE = "trim_session";
 export const FLASH_COOKIE = "trim_flash";
 export const OPS_GRANT_COOKIE = "trim_ops_grant";
+// Holds the bootstrap officer's own session token while they impersonate someone,
+// so "stop impersonating" can restore it.
+export const IMPERSONATOR_COOKIE = "trim_impersonator";
 
 export const VERIFICATION_TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48h
 export const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1h

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Crown, KeyRound, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Crown, KeyRound, Pencil, ShieldCheck, UserCog } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { listOfficers } from "@/lib/services/roster-service";
 import {
@@ -7,6 +7,7 @@ import {
   setOfficerActiveAction,
   transferBootstrapAction,
 } from "@/actions/officers";
+import { startImpersonationAction } from "@/actions/impersonation";
 import { ResetLinkReveal } from "@/components/ResetLinkReveal";
 import { SubmitButton } from "@/components/SubmitButton";
 
@@ -138,8 +139,35 @@ export default async function OfficersPage() {
                         </span>
                       ) : (
                         <>
-                          <form action={sendPasswordResetForUserAction}>
+                          {meIsBootstrap ? (
+                            <>
+                              <Link
+                                href={`/officer/members/${o.id}`}
+                                className="flex items-center gap-1 rounded-md border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Manage
+                              </Link>
+                              {active ? (
+                                <form action={startImpersonationAction}>
+                                  <input type="hidden" name="userId" value={o.id} />
+                                  <button
+                                    type="submit"
+                                    className="flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                                  >
+                                    <UserCog className="h-3.5 w-3.5" />
+                                    Impersonate
+                                  </button>
+                                </form>
+                              ) : null}
+                            </>
+                          ) : null}
+                          <form action={sendPasswordResetForUserAction} className="flex items-center gap-1.5">
                             <input type="hidden" name="userId" value={o.id} />
+                            <label className="flex items-center gap-1 text-xs text-gray-500">
+                              <input type="checkbox" name="emailIt" className="h-3.5 w-3.5" />
+                              email
+                            </label>
                             <button
                               type="submit"
                               className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"

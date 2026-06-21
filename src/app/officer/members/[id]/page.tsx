@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UserCog } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { hoursEarnedForUser } from "@/lib/services/member-service";
@@ -15,6 +15,7 @@ import {
   bootstrapEditProfileAction,
   bootstrapSetPasswordAction,
 } from "@/actions/admin-user";
+import { startImpersonationAction } from "@/actions/impersonation";
 import { formatEventDate } from "@/lib/format";
 
 const field =
@@ -145,21 +146,23 @@ export default async function MemberDetailPage({
             </p>
           ) : null}
           <div className="flex flex-wrap gap-3">
-            <form action={setRoleAction}>
-              <input type="hidden" name="userId" value={member.id} />
-              <input
-                type="hidden"
-                name="role"
-                value={member.role === "officer" ? "member" : "officer"}
-              />
-              <button
-                type="submit"
-                disabled={bootstrapProtected}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-              >
-                {member.role === "officer" ? "Demote to member" : "Promote to officer"}
-              </button>
-            </form>
+            {officer.isBootstrapOfficer ? (
+              <form action={setRoleAction}>
+                <input type="hidden" name="userId" value={member.id} />
+                <input
+                  type="hidden"
+                  name="role"
+                  value={member.role === "officer" ? "member" : "officer"}
+                />
+                <button
+                  type="submit"
+                  disabled={bootstrapProtected}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  {member.role === "officer" ? "Demote to member" : "Promote to officer"}
+                </button>
+              </form>
+            ) : null}
             <form action={setActiveAction}>
               <input type="hidden" name="userId" value={member.id} />
               <input
@@ -190,6 +193,19 @@ export default async function MemberDetailPage({
             Change this user&apos;s details directly, no links needed. Changing the
             email or password logs them out of all devices.
           </p>
+
+          {!isSelf && !member.deactivatedAt ? (
+            <form action={startImpersonationAction} className="mb-5">
+              <input type="hidden" name="userId" value={member.id} />
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100"
+              >
+                <UserCog className="h-4 w-4" />
+                Impersonate this user
+              </button>
+            </form>
+          ) : null}
 
           <form action={bootstrapEditProfileAction} className="space-y-4">
             <input type="hidden" name="userId" value={member.id} />

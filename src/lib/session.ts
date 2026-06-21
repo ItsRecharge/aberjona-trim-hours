@@ -1,5 +1,10 @@
 import { cookies, headers } from "next/headers";
-import { SESSION_COOKIE, SESSION_TTL_SECONDS, type Role } from "./constants";
+import {
+  IMPERSONATOR_COOKIE,
+  SESSION_COOKIE,
+  SESSION_TTL_SECONDS,
+  type Role,
+} from "./constants";
 import {
   signSessionToken,
   verifySessionToken,
@@ -43,15 +48,19 @@ export async function getSessionClaims(): Promise<SessionClaims | null> {
   return verifySessionToken(token);
 }
 
-/** Revokes the current session and clears the cookie. */
+/** Revokes the current session and clears the cookie (and any impersonation). */
 export async function destroySession(): Promise<void> {
   const claims = await getSessionClaims();
   if (claims) await revokeSession(claims.sid);
-  (await cookies()).delete(SESSION_COOKIE);
+  const jar = await cookies();
+  jar.delete(SESSION_COOKIE);
+  jar.delete(IMPERSONATOR_COOKIE);
 }
 
 /** Revokes all of the current user's sessions, then clears the cookie. */
 export async function destroyAllSessions(userId: number): Promise<void> {
   await revokeAllUserSessions(userId);
-  (await cookies()).delete(SESSION_COOKIE);
+  const jar = await cookies();
+  jar.delete(SESSION_COOKIE);
+  jar.delete(IMPERSONATOR_COOKIE);
 }

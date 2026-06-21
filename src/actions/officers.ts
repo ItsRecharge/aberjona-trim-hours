@@ -13,6 +13,8 @@ import {
 import { getPublicBaseUrl } from "@/lib/services/chapter-service";
 import { verifyPassword } from "@/lib/services/auth-service";
 import { recordAudit } from "@/lib/services/audit-service";
+import { sendMail } from "@/lib/email/mailer";
+import { passwordResetEmail } from "@/lib/email/templates";
 import { setFlash } from "@/lib/flash";
 
 const OFFICERS_PATH = "/officer/officers";
@@ -41,7 +43,7 @@ export async function sendPasswordResetForUserAction(formData: FormData): Promis
 
   const target = await db.user.findUnique({
     where: { id: userId },
-    select: { id: true, firstName: true, lastName: true },
+    select: { id: true, firstName: true, lastName: true, email: true },
   });
   if (!target) {
     await setFlash("danger", "That account no longer exists.");
@@ -57,14 +59,36 @@ export async function sendPasswordResetForUserAction(formData: FormData): Promis
     sameSite: "lax",
   });
 
+  // Optionally email the link straight to the person.
+  const emailIt = formData.get("emailIt") != null;
+  let emailed = false;
+  if (emailIt) {
+    try {
+      await sendMail({
+        to: target.email,
+        ...passwordResetEmail(target.firstName, token, await getPublicBaseUrl()),
+      });
+      emailed = true;
+    } catch (err) {
+      console.error("[officer-reset] email failed:", err);
+    }
+  }
+
   await recordAudit({
     actor: officer,
     action: "officer.passwordResetLink",
-    summary: `Generated a password reset link for ${fullName(target)}`,
+    summary: `Generated a password reset link for ${fullName(target)}${emailed ? " and emailed it" : ""}`,
     targetType: "user",
     targetId: userId,
   });
-  await setFlash("success", `Reset link generated for ${target.firstName}. Copy it below.`);
+  await setFlash(
+    "success",
+    emailIt
+      ? emailed
+        ? `Reset link generated and emailed to ${target.firstName}. Copy below too.`
+        : `Reset link generated for ${target.firstName} (email failed — copy it below).`
+      : `Reset link generated for ${target.firstName}. Copy it below.`,
+  );
   revalidatePath(OFFICERS_PATH);
   redirect(OFFICERS_PATH);
 }
