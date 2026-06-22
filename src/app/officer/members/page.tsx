@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { requireUser } from "@/lib/current-user";
 import { listMembersWithProgress } from "@/lib/services/member-service";
 
@@ -9,7 +10,12 @@ export default async function OfficerMembersPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Member roster</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Member roster</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Click a member to edit their info and adjust hours.
+          </p>
+        </div>
         <a
           href="/officer/export/members.csv"
           className="text-sm font-medium text-indigo-700 hover:underline"
@@ -30,11 +36,15 @@ export default async function OfficerMembersPage() {
                 <th className="px-5 py-3 text-center">Class</th>
                 <th className="px-5 py-3 text-right">Earned</th>
                 <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {members.map((m) => (
-                <tr key={m.id} className={m.deactivatedAt ? "opacity-50" : ""}>
+                <tr
+                  key={m.id}
+                  className={`transition hover:bg-gray-50 ${m.deactivatedAt ? "opacity-50" : ""}`}
+                >
                   <td className="px-5 py-3">
                     <Link
                       href={`/officer/members/${m.id}`}
@@ -60,6 +70,15 @@ export default async function OfficerMembersPage() {
                         Unverified
                       </span>
                     )}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <Link
+                      href={`/officer/members/${m.id}`}
+                      className="inline-flex items-center gap-1 rounded-md border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Manage
+                    </Link>
                   </td>
                 </tr>
               ))}

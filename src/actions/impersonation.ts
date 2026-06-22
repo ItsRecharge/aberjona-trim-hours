@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { requireUser, fullName } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
-import { recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
 import {
   IMPERSONATOR_COOKIE,
@@ -70,13 +69,7 @@ export async function startImpersonationAction(formData: FormData): Promise<void
     name: fullName(target),
   });
 
-  await recordAudit({
-    actor: admin,
-    action: "impersonate.start",
-    summary: `Started impersonating ${fullName(target)} (${target.role})`,
-    targetType: "user",
-    targetId: target.id,
-  });
+  // Impersonation is intentionally not recorded in the audit log.
 
   redirect(homeFor(target.role));
 }

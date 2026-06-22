@@ -21,7 +21,7 @@ export default async function OfficerLayout({
       {/* Desktop sidebar (phones use the top bar + bottom bar) */}
       <aside className="sticky top-0 hidden h-[calc(100vh-2.75rem)] w-[220px] flex-col bg-[#1d2d35] text-white md:flex">
         <div className="px-4 py-5">
-          <BrandLogo href="/officer/dashboard" imgClassName="h-8 w-auto" />
+          <BrandLogo href="/officer/dashboard" label="Officer Panel" imgClassName="h-8 w-auto" />
         </div>
         <nav className="flex-1 space-y-1 px-3">
           {OFFICER_NAV.map((item) => (
@@ -51,7 +51,7 @@ export default async function OfficerLayout({
       <div className="flex flex-1 flex-col">
         {/* Mobile top bar: brand left, account flush right */}
         <header className="flex items-start justify-between gap-3 bg-[#1d2d35] px-4 py-3 text-white md:hidden">
-          <BrandLogo href="/officer/dashboard" imgClassName="h-7 w-auto" />
+          <BrandLogo href="/officer/dashboard" label="Officer Panel" imgClassName="h-7 w-auto" />
           <div className="flex flex-col items-end gap-1 text-sm">
             <span className="font-medium">{fullName(user)}</span>
             <AccountControls className="text-white/85" align="end" />

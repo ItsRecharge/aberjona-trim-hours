@@ -34,3 +34,8 @@ export async function listAuditLog(limit = 200) {
     take: limit,
   });
 }
+
+/** Deletes every audit log entry. Bootstrap-only; gate at the action layer. */
+export async function clearAuditLog(): Promise<void> {
+  await db.auditLog.deleteMany({});
+}

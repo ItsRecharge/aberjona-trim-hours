@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requireUser } from "@/lib/current-user";
 import { listAuditLog } from "@/lib/services/audit-service";
+import { ClearAuditLogButton } from "@/components/ClearAuditLogButton";
 
 function formatWhen(d: Date): string {
   return d.toLocaleString("en-US", {
@@ -14,23 +15,26 @@ function formatWhen(d: Date): string {
 }
 
 export default async function AuditLogPage() {
-  await requireUser("officer");
+  const me = await requireUser("officer");
   const entries = await listAuditLog(300);
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/officer/admin"
-          className="flex items-center gap-1.5 text-sm text-indigo-700 hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to admin
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900">Audit log</h1>
-        <p className="text-sm text-gray-500">
-          A record of officer actions, newest first.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <Link
+            href="/officer/admin"
+            className="flex items-center gap-1.5 text-sm text-indigo-700 hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to admin
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold text-gray-900">Audit log</h1>
+          <p className="text-sm text-gray-500">
+            A record of officer actions, newest first.
+          </p>
+        </div>
+        {me.isBootstrapOfficer ? <ClearAuditLogButton /> : null}
       </div>
 
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">

@@ -1,10 +1,6 @@
 import { cookies } from "next/headers";
-import { db } from "./db";
-import { fullName, getCurrentUser } from "./current-user";
 import { getSessionClaims } from "./session";
-import { verifySessionToken } from "./session-token";
 import { revokeSession } from "./services/session-service";
-import { recordAudit } from "./services/audit-service";
 import {
   IMPERSONATOR_COOKIE,
   SESSION_COOKIE,
@@ -22,14 +18,6 @@ export async function endImpersonationIfActive(): Promise<boolean> {
   const saved = jar.get(IMPERSONATOR_COOKIE)?.value;
   if (!saved) return false;
 
-  const impersonated = await getCurrentUser();
-
-  // Resolve the admin from the stashed token (not a cookie re-read) for the audit.
-  const adminClaims = await verifySessionToken(saved);
-  const adminSession = adminClaims
-    ? await db.session.findUnique({ where: { id: adminClaims.sid }, include: { user: true } })
-    : null;
-
   const claims = await getSessionClaims();
   if (claims) await revokeSession(claims.sid);
 
@@ -42,14 +30,6 @@ export async function endImpersonationIfActive(): Promise<boolean> {
   });
   jar.delete(IMPERSONATOR_COOKIE);
 
-  if (adminSession?.user) {
-    await recordAudit({
-      actor: adminSession.user,
-      action: "impersonate.stop",
-      summary: `Stopped impersonating ${impersonated ? fullName(impersonated) : "a user"}`,
-      targetType: "user",
-      targetId: impersonated?.id,
-    });
-  }
+  // Impersonation is intentionally not recorded in the audit log.
   return true;
 }

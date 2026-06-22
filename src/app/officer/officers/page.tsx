@@ -1,14 +1,10 @@
 import Link from "next/link";
-import { ArrowLeft, Crown, KeyRound, Pencil, ShieldCheck, UserCog } from "lucide-react";
+import { ArrowLeft, Crown, ShieldCheck } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { listOfficers } from "@/lib/services/roster-service";
-import {
-  sendPasswordResetForUserAction,
-  setOfficerActiveAction,
-  transferBootstrapAction,
-} from "@/actions/officers";
-import { startImpersonationAction } from "@/actions/impersonation";
+import { transferBootstrapAction } from "@/actions/officers";
 import { ResetLinkReveal } from "@/components/ResetLinkReveal";
+import { OfficerActionsMenu } from "@/components/OfficerActionsMenu";
 import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function OfficersPage() {
@@ -106,25 +102,27 @@ export default async function OfficersPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 font-medium text-gray-900">
                       {fullName(o)}
-                      {o.isBootstrapOfficer ? (
-                        <span className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                          <ShieldCheck className="h-3 w-3" /> Bootstrap
-                        </span>
-                      ) : null}
                       {isSelf ? <span className="text-xs text-gray-400">(you)</span> : null}
                     </div>
                     <div className="text-xs text-gray-500">{o.email}</div>
                   </td>
                   <td className="px-4 py-3">
-                    {active ? (
-                      <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                        Deactivated
-                      </span>
-                    )}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {active ? (
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                          Deactivated
+                        </span>
+                      )}
+                      {o.isBootstrapOfficer ? (
+                        <span className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                          <ShieldCheck className="h-3 w-3" /> Bootstrap
+                        </span>
+                      ) : null}
+                    </div>
                     {protectedNow ? (
                       <div className="mt-1 text-xs text-gray-400">
                         Protected — transfer the role to remove
@@ -132,73 +130,18 @@ export default async function OfficersPage() {
                     ) : null}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center justify-end gap-2">
+                    <div className="flex items-center justify-end">
                       {isSelf ? (
                         <span className="text-xs text-gray-400">
                           Manage your own account in Settings
                         </span>
                       ) : (
-                        <>
-                          {meIsBootstrap ? (
-                            <>
-                              <Link
-                                href={`/officer/members/${o.id}`}
-                                className="flex items-center gap-1 rounded-md border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                                Manage
-                              </Link>
-                              {active ? (
-                                <form action={startImpersonationAction}>
-                                  <input type="hidden" name="userId" value={o.id} />
-                                  <button
-                                    type="submit"
-                                    className="flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
-                                  >
-                                    <UserCog className="h-3.5 w-3.5" />
-                                    Impersonate
-                                  </button>
-                                </form>
-                              ) : null}
-                            </>
-                          ) : null}
-                          <form action={sendPasswordResetForUserAction} className="flex items-center gap-1.5">
-                            <input type="hidden" name="userId" value={o.id} />
-                            <label className="flex items-center gap-1 text-xs text-gray-500">
-                              <input type="checkbox" name="emailIt" className="h-3.5 w-3.5" />
-                              email
-                            </label>
-                            <button
-                              type="submit"
-                              className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
-                            >
-                              <KeyRound className="h-3.5 w-3.5" />
-                              Reset password
-                            </button>
-                          </form>
-                          <form action={setOfficerActiveAction}>
-                            <input type="hidden" name="userId" value={o.id} />
-                            <input type="hidden" name="active" value={active ? "false" : "true"} />
-                            <button
-                              type="submit"
-                              disabled={protectedNow}
-                              title={
-                                protectedNow
-                                  ? "Transfer the bootstrap role before removing this officer."
-                                  : undefined
-                              }
-                              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                                protectedNow
-                                  ? "cursor-not-allowed border border-gray-200 text-gray-300"
-                                  : active
-                                    ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
-                                    : "border border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
-                              }`}
-                            >
-                              {active ? "Deactivate" : "Reactivate"}
-                            </button>
-                          </form>
-                        </>
+                        <OfficerActionsMenu
+                          officerId={o.id}
+                          active={active}
+                          protectedNow={protectedNow}
+                          meIsBootstrap={meIsBootstrap}
+                        />
                       )}
                     </div>
                   </td>

@@ -19,7 +19,7 @@ export default async function MemberLayout({
     <div className="min-h-screen">
       <header className="bg-indigo-700 text-white shadow">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <BrandLogo href="/member/dashboard" imgClassName="h-8 w-auto" />
+          <BrandLogo href="/member/dashboard" label="Member Hours Log" imgClassName="h-8 w-auto" />
 
           {/* Desktop nav (phones use the bottom bar) */}
           <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">

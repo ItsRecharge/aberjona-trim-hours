@@ -11,6 +11,18 @@
 #
 # Code-only change? You can skip this script and just run:
 #   git pull && sudo systemctl restart aberjona-trim-hours
+#
+# Troubleshooting — Ops Console "git pull" fails with:
+#   error: insufficient permission for adding an object to repository database .git/objects
+#   fatal: failed to write object
+# This means part of .git is owned by a different user (usually root, from an
+# initial `sudo git clone`/pull), so the service user (musicserver) can't write
+# new objects. The service already has filesystem write access (systemd
+# ReadWritePaths), so the fix is plain ownership — run once on the server:
+#   sudo chown -R musicserver:musicserver /home/musicserver/aberjona-trim-hours
+# Then only ever run git in this repo as musicserver. If a "dubious ownership"
+# warning appears afterward:
+#   sudo -u musicserver git config --global --add safe.directory /home/musicserver/aberjona-trim-hours
 
 set -euo pipefail
 

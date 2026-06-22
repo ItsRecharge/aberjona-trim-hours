@@ -61,6 +61,8 @@ export default async function MemberDetailPage({
         </p>
       </div>
 
+      {member.role !== "officer" && (
+        <>
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <div className="mb-3 flex items-end justify-between">
           <p className="text-sm text-gray-500">Hours earned</p>
@@ -135,6 +137,8 @@ export default async function MemberDetailPage({
           </ul>
         )}
       </section>
+        </>
+      )}
 
       {!isSelf && (
         <section className="rounded-xl bg-white p-6 shadow-sm">
