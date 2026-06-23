@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireUser, fullName } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { adjustHoursSchema } from "@/lib/validation";
@@ -12,6 +13,9 @@ import {
   setMemberRole,
 } from "@/lib/services/roster-service";
 import { recordAudit } from "@/lib/services/audit-service";
+import {
+  syncSheetsAfterChange,
+} from "@/lib/services/sheet-sync-service";
 import { setFlash } from "@/lib/flash";
 import type { Role } from "@/lib/constants";
 
@@ -48,6 +52,27 @@ export async function adjustHoursAction(formData: FormData): Promise<void> {
     hours: parsed.data.hours,
     officerId: officer.id,
   });
+  const member = await db.user.findUnique({
+    where: { id: userId },
+    select: { firstName: true, lastName: true, email: true },
+  });
+  const adjustment = parsed.data;
+  after(() =>
+    syncSheetsAfterChange(
+      member
+        ? [
+            {
+              memberName: fullName(member),
+              email: member.email,
+              hours: adjustment.hours,
+              source: `Adjustment: ${adjustment.description}`,
+              date: adjustment.date,
+              recordedBy: fullName(officer),
+            },
+          ]
+        : undefined,
+    ),
+  );
   await recordAudit({
     actor: officer,
     action: "roster.adjustHours",
@@ -90,6 +115,7 @@ export async function setRoleAction(formData: FormData): Promise<void> {
     }
     throw err;
   }
+  after(() => syncSheetsAfterChange());
   await recordAudit({
     actor: officer,
     action: role === "officer" ? "roster.promote" : "roster.demote",
@@ -121,6 +147,7 @@ export async function setActiveAction(formData: FormData): Promise<void> {
     }
     throw err;
   }
+  after(() => syncSheetsAfterChange());
   await recordAudit({
     actor: officer,
     action: active ? "roster.reactivate" : "roster.deactivate",

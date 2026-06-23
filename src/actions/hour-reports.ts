@@ -11,6 +11,8 @@ import {
 } from "@/lib/services/hour-report-service";
 import { notifyHourReportDecision } from "@/lib/email/notify";
 import { recordAudit } from "@/lib/services/audit-service";
+import { syncSheetsAfterChange } from "@/lib/services/sheet-sync-service";
+import { fullName } from "@/lib/current-user";
 import { setFlash } from "@/lib/flash";
 import { rateLimit } from "@/lib/rate-limit";
 import { requestIp } from "@/lib/request-ip";
@@ -47,14 +49,28 @@ async function reviewAction(formData: FormData, approve: boolean): Promise<void>
 
   const report = await reviewReport(reportId, approve, officer.id);
   if (report) {
-    after(() =>
-      notifyHourReportDecision(
-        report.userId,
-        report.description,
-        report.hoursRequested,
+    const reviewed = report;
+    after(async () => {
+      await notifyHourReportDecision(
+        reviewed.userId,
+        reviewed.description,
+        reviewed.hoursRequested,
         approve,
-      ),
-    );
+      );
+      // Approved hours now count toward totals — mirror them to the sheet.
+      if (approve) {
+        await syncSheetsAfterChange([
+          {
+            memberName: fullName(reviewed.user),
+            email: reviewed.user.email,
+            hours: reviewed.hoursRequested,
+            source: `Report: ${reviewed.description}`,
+            date: reviewed.date,
+            recordedBy: fullName(officer),
+          },
+        ]);
+      }
+    });
     await recordAudit({
       actor: officer,
       action: approve ? "report.approve" : "report.deny",

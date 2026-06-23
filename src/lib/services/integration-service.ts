@@ -51,15 +51,29 @@ export interface SheetsConfig {
   spreadsheetId: string;
   serviceEmail: string;
   privateKey: string;
+  rosterTab: string;
+  logTab: string;
 }
+
+const DEFAULT_ROSTER_TAB = "Roster";
+const DEFAULT_LOG_TAB = "Log";
 
 export async function getSheetsConfig(): Promise<SheetsConfig | null> {
   const s = await settings();
+  const rosterTab = s?.sheetsRosterTab?.trim() || DEFAULT_ROSTER_TAB;
+  const logTab = s?.sheetsLogTab?.trim() || DEFAULT_LOG_TAB;
+
   const id = s?.sheetsSpreadsheetId?.trim();
   const email = s?.sheetsServiceEmail?.trim();
   const keyRaw = decryptSecret(s?.sheetsPrivateKeyEnc);
   if (id && email && keyRaw) {
-    return { spreadsheetId: id, serviceEmail: email, privateKey: decodeKey(keyRaw) };
+    return {
+      spreadsheetId: id,
+      serviceEmail: email,
+      privateKey: decodeKey(keyRaw),
+      rosterTab,
+      logTab,
+    };
   }
 
   const envId = env("GOOGLE_SHEETS_SPREADSHEET_ID");
@@ -70,6 +84,8 @@ export async function getSheetsConfig(): Promise<SheetsConfig | null> {
       spreadsheetId: envId,
       serviceEmail: envEmail,
       privateKey: decodeKey(envKey),
+      rosterTab,
+      logTab,
     };
   }
   return null;
@@ -88,6 +104,8 @@ export async function getIntegrationStatus() {
     mailFromDb: Boolean(s?.gmailUser && s?.gmailAppPasswordEnc),
     sheetsSpreadsheetId: s?.sheetsSpreadsheetId ?? env("GOOGLE_SHEETS_SPREADSHEET_ID") ?? "",
     sheetsServiceEmail: s?.sheetsServiceEmail ?? env("GOOGLE_SERVICE_ACCOUNT_EMAIL") ?? "",
+    sheetsRosterTab: s?.sheetsRosterTab?.trim() || DEFAULT_ROSTER_TAB,
+    sheetsLogTab: s?.sheetsLogTab?.trim() || DEFAULT_LOG_TAB,
     sheetsConfigured: await isSheetsConfigured(),
     sheetsFromDb: Boolean(s?.sheetsSpreadsheetId && s?.sheetsPrivateKeyEnc),
   };
@@ -115,19 +133,27 @@ export async function updateSheetsConfig(input: {
   spreadsheetId: string;
   serviceEmail: string;
   privateKey: string;
+  rosterTab?: string;
+  logTab?: string;
 }): Promise<void> {
+  const rosterTab = input.rosterTab?.trim() || DEFAULT_ROSTER_TAB;
+  const logTab = input.logTab?.trim() || DEFAULT_LOG_TAB;
   await db.integrationSettings.upsert({
     where: { id: 1 },
     update: {
       sheetsSpreadsheetId: input.spreadsheetId,
       sheetsServiceEmail: input.serviceEmail,
       sheetsPrivateKeyEnc: encryptSecret(input.privateKey),
+      sheetsRosterTab: rosterTab,
+      sheetsLogTab: logTab,
     },
     create: {
       id: 1,
       sheetsSpreadsheetId: input.spreadsheetId,
       sheetsServiceEmail: input.serviceEmail,
       sheetsPrivateKeyEnc: encryptSecret(input.privateKey),
+      sheetsRosterTab: rosterTab,
+      sheetsLogTab: logTab,
     },
   });
 }

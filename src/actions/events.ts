@@ -27,6 +27,7 @@ import {
   notifyWaitlistPromoted,
 } from "@/lib/email/notify";
 import { recordAudit } from "@/lib/services/audit-service";
+import { syncSheetsAfterChange } from "@/lib/services/sheet-sync-service";
 import { setFlash } from "@/lib/flash";
 import type { z } from "zod";
 
@@ -259,6 +260,8 @@ export async function editEventAction(formData: FormData): Promise<void> {
       notifyWaitlistPromoted(promoted, title, "an updated timeslot"),
     );
   }
+  // Hours value / slots may have changed retroactively — refresh the mirror.
+  after(() => syncSheetsAfterChange());
   await recordAudit({
     actor: officer,
     action: "event.edit",
@@ -280,6 +283,7 @@ export async function cancelEventAction(formData: FormData): Promise<void> {
   const affected = await cancelEvent(eventId);
   if (affected && event) {
     after(() => notifyEventCancelled(affected, event.title));
+    after(() => syncSheetsAfterChange());
     await recordAudit({
       actor: officer,
       action: "event.cancel",
@@ -301,6 +305,7 @@ export async function deleteEventAction(formData: FormData): Promise<void> {
   const eventId = Number(formData.get("eventId"));
   const event = await db.event.findUnique({ where: { id: eventId } });
   await deleteEvent(eventId);
+  after(() => syncSheetsAfterChange());
   await recordAudit({
     actor: officer,
     action: "event.delete",

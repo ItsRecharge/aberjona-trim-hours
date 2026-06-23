@@ -37,6 +37,8 @@ export default async function IntegrationsPage() {
         <SheetsForm
           spreadsheetId={status.sheetsSpreadsheetId}
           serviceEmail={status.sheetsServiceEmail}
+          rosterTab={status.sheetsRosterTab}
+          logTab={status.sheetsLogTab}
           configured={status.sheetsConfigured}
         />
       </section>

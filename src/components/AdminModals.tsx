@@ -32,6 +32,8 @@ interface IntegrationStatus {
   mailConfigured: boolean;
   sheetsSpreadsheetId: string;
   sheetsServiceEmail: string;
+  sheetsRosterTab: string;
+  sheetsLogTab: string;
   sheetsConfigured: boolean;
 }
 
@@ -284,6 +286,8 @@ export function AdminModals({
               <SheetsForm
                 spreadsheetId={integrationStatus.sheetsSpreadsheetId}
                 serviceEmail={integrationStatus.sheetsServiceEmail}
+                rosterTab={integrationStatus.sheetsRosterTab}
+                logTab={integrationStatus.sheetsLogTab}
                 configured={integrationStatus.sheetsConfigured}
               />
             </div>

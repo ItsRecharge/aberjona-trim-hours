@@ -3,10 +3,12 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { requireUser } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { runYearEndReset, resetPhrase } from "@/lib/services/reset-service";
 import { recordAudit } from "@/lib/services/audit-service";
+import { syncSheetsAfterChange } from "@/lib/services/sheet-sync-service";
 import { setFlash } from "@/lib/flash";
 
 export async function yearEndResetAction(formData: FormData): Promise<void> {
@@ -38,6 +40,8 @@ export async function yearEndResetAction(formData: FormData): Promise<void> {
   }
 
   const summary = await runYearEndReset();
+  // Roster is now empty — push the cleared state to the sheet.
+  after(() => syncSheetsAfterChange());
   await recordAudit({
     actor: officer,
     action: "chapter.reset",

@@ -6,6 +6,7 @@ import {
   updateMailConfig,
   updateSheetsConfig,
 } from "@/lib/services/integration-service";
+import { syncRosterNow } from "@/lib/services/sheet-sync-service";
 import { recordAudit } from "@/lib/services/audit-service";
 
 export interface IntegrationFormState {
@@ -51,15 +52,27 @@ export async function updateSheetsAction(
   const spreadsheetId = String(formData.get("sheetsSpreadsheetId") ?? "").trim();
   const serviceEmail = String(formData.get("sheetsServiceEmail") ?? "").trim();
   const privateKey = String(formData.get("sheetsPrivateKey") ?? "").trim();
+  const rosterTab = String(formData.get("sheetsRosterTab") ?? "").trim();
+  const logTab = String(formData.get("sheetsLogTab") ?? "").trim();
   if (!spreadsheetId || !serviceEmail || !privateKey) {
     return { error: "Spreadsheet ID, service-account email, and key are all required." };
   }
 
-  await updateSheetsConfig({ spreadsheetId, serviceEmail, privateKey });
+  await updateSheetsConfig({ spreadsheetId, serviceEmail, privateKey, rosterTab, logTab });
   await recordAudit({
     actor: officer,
     action: "integration.sheets",
     summary: `Updated Google Sheets backup config (${spreadsheetId})`,
   });
-  return { success: "Google Sheets settings saved." };
+
+  // Write the roster now so saving doubles as a live connection test.
+  const result = await syncRosterNow();
+  if (!result.ok) {
+    return {
+      error: `Settings saved, but the test write failed: ${result.error}. Check the spreadsheet ID, that the sheet is shared with the service account as Editor, and the tab names.`,
+    };
+  }
+  return {
+    success: `Google Sheets settings saved — wrote ${result.count} member(s) to the roster tab.`,
+  };
 }

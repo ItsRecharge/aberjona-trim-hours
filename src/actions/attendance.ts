@@ -8,7 +8,7 @@ import { markSlotAttendance } from "@/lib/services/attendance-service";
 import { db } from "@/lib/db";
 import { notifyHoursCredited } from "@/lib/email/notify";
 import { recordAudit } from "@/lib/services/audit-service";
-import { appendHoursRows } from "@/lib/sheets";
+import { syncSheetsAfterChange } from "@/lib/services/sheet-sync-service";
 import { setFlash } from "@/lib/flash";
 
 export async function markAttendanceAction(formData: FormData): Promise<void> {
@@ -35,16 +35,21 @@ export async function markAttendanceAction(formData: FormData): Promise<void> {
 
       const users = await db.user.findMany({
         where: { id: { in: credited.map((c) => c.userId) } },
-        select: { id: true, firstName: true, lastName: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       });
-      const nameById = new Map(users.map((u) => [u.id, fullName(u)]));
-      await appendHoursRows(
-        credited.map((c) => ({
-          memberName: nameById.get(c.userId) ?? `User ${c.userId}`,
-          hours: c.hours,
-          source: `Event: ${c.eventTitle}`,
-          date: new Date(),
-        })),
+      const byId = new Map(users.map((u) => [u.id, u]));
+      await syncSheetsAfterChange(
+        credited.map((c) => {
+          const u = byId.get(c.userId);
+          return {
+            memberName: u ? fullName(u) : `User ${c.userId}`,
+            email: u?.email,
+            hours: c.hours,
+            source: `Event: ${c.eventTitle}`,
+            date: new Date(),
+            recordedBy: fullName(officer),
+          };
+        }),
       );
     });
   }

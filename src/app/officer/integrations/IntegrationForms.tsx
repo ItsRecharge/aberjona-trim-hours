@@ -101,10 +101,14 @@ export function MailForm({
 export function SheetsForm({
   spreadsheetId,
   serviceEmail,
+  rosterTab,
+  logTab,
   configured,
 }: {
   spreadsheetId: string;
   serviceEmail: string;
+  rosterTab: string;
+  logTab: string;
   configured: boolean;
 }) {
   const [state, action] = useActionState<IntegrationFormState, FormData>(
@@ -144,6 +148,37 @@ export function SheetsForm({
         />
         <p className="mt-1 text-xs text-gray-500">
           Share the spreadsheet with this address (Editor).
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="sheetsRosterTab" className={label}>
+            Roster tab name
+          </label>
+          <input
+            id="sheetsRosterTab"
+            name="sheetsRosterTab"
+            defaultValue={rosterTab}
+            placeholder="Roster"
+            className={field}
+          />
+        </div>
+        <div>
+          <label htmlFor="sheetsLogTab" className={label}>
+            Log tab name
+          </label>
+          <input
+            id="sheetsLogTab"
+            name="sheetsLogTab"
+            defaultValue={logTab}
+            placeholder="Log"
+            className={field}
+          />
+        </div>
+        <p className="col-span-2 -mt-1 text-xs text-gray-500">
+          Which tabs to write to. They&apos;ll be created automatically if missing. The
+          Roster tab is a live snapshot of every member; the Log tab keeps an append-only
+          history of credited hours.
         </p>
       </div>
       <div>
