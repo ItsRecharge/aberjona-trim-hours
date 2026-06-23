@@ -1,19 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Settings,
   Plug,
   ScrollText,
   AlertTriangle,
+  Users,
+  Send,
   X,
 } from "lucide-react";
 import { updateChapterAction } from "@/actions/chapter";
 import { yearEndResetAction } from "@/actions/reset";
 import { SubmitButton } from "@/components/SubmitButton";
 import { MailForm, SheetsForm } from "@/app/officer/integrations/IntegrationForms";
+import { EmailTestForm } from "@/components/EmailTestForm";
 
-type ModalType = "chapter" | "integrations" | "audit" | "reset" | null;
+type ModalType = "chapter" | "integrations" | "email" | "audit" | "reset" | null;
 
 interface AuditEntry {
   id: number | string;
@@ -43,6 +47,7 @@ interface Props {
   chapterName: string;
   yearlyHoursGoal: number;
   integrationStatus: IntegrationStatus;
+  emailTestTo: string;
   auditLog: AuditEntry[];
   resetStats: ResetStats;
   resetConfirmPhrase: string;
@@ -79,12 +84,16 @@ function Modal({
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
   }, [onClose]);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-md sm:items-center sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -92,7 +101,9 @@ function Modal({
       <div
         role="dialog"
         aria-modal="true"
-        className="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] border border-white/30 bg-white shadow-2xl sm:max-w-xl sm:rounded-[28px]"
+        // transform-gpu + isolate force the panel onto its own compositing layer
+        // so the rounded corners survive when the body below scrolls (Safari bug).
+        className="flex max-h-[92dvh] w-full transform-gpu isolate flex-col overflow-hidden rounded-t-[28px] border border-white/30 bg-white shadow-2xl [backface-visibility:hidden] sm:max-w-xl sm:rounded-[28px]"
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-100 px-6 pb-4 pt-5">
           <div>
@@ -118,6 +129,7 @@ export function AdminModals({
   chapterName,
   yearlyHoursGoal,
   integrationStatus,
+  emailTestTo,
   auditLog,
   resetStats,
   resetConfirmPhrase,
@@ -142,6 +154,13 @@ export function AdminModals({
       danger: false,
     },
     {
+      id: "email" as const,
+      title: "Email test",
+      desc: "Send a sample of any email template to check delivery.",
+      icon: Send,
+      danger: false,
+    },
+    {
       id: "audit" as const,
       title: "Audit log",
       desc: "A record of every officer action.",
@@ -157,17 +176,28 @@ export function AdminModals({
     },
   ];
 
+  const cardClass =
+    "flex w-full items-start gap-3 rounded-2xl bg-white p-5 text-left shadow-sm transition hover:shadow-md";
+
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
+        <Link href="/officer/officers" className={cardClass}>
+          <Users className="mt-0.5 h-5 w-5 shrink-0 text-indigo-700" />
+          <div>
+            <p className="font-semibold text-gray-900">Officers</p>
+            <p className="mt-0.5 text-sm text-gray-500">
+              View officers, reset passwords, and remove officers as they change.
+            </p>
+          </div>
+        </Link>
+
         {cards.map((c) => (
           <button
             key={c.id}
             type="button"
             onClick={() => setModal(c.id)}
-            className={`flex w-full items-start gap-3 rounded-2xl bg-white p-5 text-left shadow-sm transition hover:shadow-md ${
-              c.danger ? "ring-1 ring-red-100" : ""
-            }`}
+            className={`${cardClass} ${c.danger ? "ring-1 ring-red-100" : ""}`}
           >
             <c.icon
               className={`mt-0.5 h-5 w-5 shrink-0 ${c.danger ? "text-red-600" : "text-indigo-700"}`}
@@ -257,6 +287,30 @@ export function AdminModals({
                 configured={integrationStatus.sheetsConfigured}
               />
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Email test modal */}
+      {modal === "email" && (
+        <Modal
+          title="Email test"
+          subtitle="Send a sample template, with sample data, to verify delivery."
+          onClose={close}
+        >
+          <div className="space-y-4">
+            {integrationStatus.mailConfigured ? (
+              <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+                Email is configured — sending as{" "}
+                <span className="font-medium">{integrationStatus.gmailUser}</span>.
+              </div>
+            ) : (
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Email isn&apos;t configured yet. Set it up under Integrations before
+                sending a test.
+              </div>
+            )}
+            <EmailTestForm defaultTo={emailTestTo} />
           </div>
         </Modal>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   KeyRound,
@@ -33,22 +34,69 @@ export function OfficerActionsMenu({
   meIsBootstrap,
 }: OfficerActionsMenuProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{
+    right: number;
+    top?: number;
+    bottom?: number;
+  } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Anchor the portal menu to the trigger button (right-aligned, opening down,
+  // flipping up — anchored to the button's top — when it'd overflow the bottom).
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const MENU_HEIGHT = 320; // generous upper bound for flip detection
+    function place() {
+      const rect = buttonRef.current!.getBoundingClientRect();
+      const below = window.innerHeight - rect.bottom;
+      const openUp = below < MENU_HEIGHT && rect.top > below;
+      setPos({
+        right: window.innerWidth - rect.right,
+        ...(openUp
+          ? { bottom: window.innerHeight - rect.top + 4 }
+          : { top: rect.bottom + 4 }),
+      });
+    }
+    place();
+    // Close on scroll/resize rather than chase the anchor — avoids drift.
+    function dismiss() {
+      setOpen(false);
+    }
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        !buttonRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
         setOpen(false);
       }
     }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
     document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (
-    <div ref={ref} className="relative inline-block text-left">
+    <div className="inline-block text-left">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
@@ -59,8 +107,17 @@ export function OfficerActionsMenu({
         <MoreVertical className="h-4 w-4" />
       </button>
 
-      {open ? (
-        <div className="absolute right-0 z-10 mt-1 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+      {open && pos
+        ? createPortal(
+            <div
+              ref={menuRef}
+              style={{
+                position: "fixed",
+                right: pos.right,
+                top: pos.top,
+                bottom: pos.bottom,
+              }}
+              className="z-50 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
           {meIsBootstrap ? (
             <Link
               href={`/officer/members/${officerId}`}
@@ -126,8 +183,10 @@ export function OfficerActionsMenu({
               {active ? "Deactivate" : "Reactivate"}
             </button>
           </form>
-        </div>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

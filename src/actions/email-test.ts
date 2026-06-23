@@ -15,13 +15,13 @@ export async function sendTestEmailAction(formData: FormData): Promise<void> {
   const entry = TEST_TEMPLATES[templateKey];
   if (!entry) {
     await setFlash("danger", "Unknown email template.");
-    redirect("/officer/email-test");
+    redirect("/officer/admin");
   }
 
   const parsedTo = emailSchema.safeParse(formData.get("to"));
   if (!parsedTo.success) {
     await setFlash("danger", "Enter a valid recipient email address.");
-    redirect("/officer/email-test");
+    redirect("/officer/admin");
   }
   const to = parsedTo.data;
 
@@ -52,5 +52,5 @@ export async function sendTestEmailAction(formData: FormData): Promise<void> {
     await setFlash("danger", "Sending failed — check the email configuration.");
   }
 
-  redirect("/officer/email-test");
+  redirect("/officer/admin");
 }

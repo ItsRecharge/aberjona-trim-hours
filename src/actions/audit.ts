@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/current-user";
 import { clearAuditLog, recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
 
-const AUDIT_PATH = "/officer/audit";
+const AUDIT_PATH = "/officer/admin";
 
 /** Bootstrap-only: wipe the audit log, leaving a single entry recording the clear. */
 export async function clearAuditLogAction(): Promise<void> {
