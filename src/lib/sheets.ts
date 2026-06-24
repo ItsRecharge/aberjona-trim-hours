@@ -1,5 +1,25 @@
+import https from "node:https";
 import { google, type sheets_v4 } from "googleapis";
 import { getSheetsConfig, type SheetsConfig } from "./services/integration-service";
+
+// Reusing one agent forces gaxios (used by googleapis) onto Node's native https
+// transport instead of Next.js's patched global fetch (undici) — which otherwise
+// aborts the OAuth token response with "Premature close".
+const keepAliveAgent = new https.Agent({ keepAlive: true });
+
+/** Retries a transient network failure a few times before giving up. */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
 
 export interface HoursRow {
   memberName: string;
@@ -42,6 +62,11 @@ function client(config: SheetsConfig): sheets_v4.Sheets {
     key: config.privateKey,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
+  // Pin the OAuth token request to the Node https transport (avoids "Premature close").
+  const transporter = auth.transporter as { defaults?: Record<string, unknown> };
+  transporter.defaults = { ...transporter.defaults, agent: keepAliveAgent };
+  // Same for the Sheets data requests.
+  google.options({ agent: keepAliveAgent });
   return google.sheets({ version: "v4", auth });
 }
 
@@ -51,18 +76,20 @@ async function ensureTabsExist(
   spreadsheetId: string,
   tabs: string[],
 ): Promise<void> {
-  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const meta = await withRetry(() => sheets.spreadsheets.get({ spreadsheetId }));
   const existing = new Set(
     (meta.data.sheets ?? []).map((s) => s.properties?.title).filter(Boolean) as string[],
   );
   const missing = [...new Set(tabs)].filter((t) => !existing.has(t));
   if (missing.length === 0) return;
-  await sheets.spreadsheets.batchUpdate({
-    spreadsheetId,
-    requestBody: {
-      requests: missing.map((title) => ({ addSheet: { properties: { title } } })),
-    },
-  });
+  await withRetry(() =>
+    sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: missing.map((title) => ({ addSheet: { properties: { title } } })),
+      },
+    }),
+  );
 }
 
 function notConfigured(): void {
@@ -88,21 +115,23 @@ export async function appendHoursRows(rows: HoursRow[]): Promise<void> {
   try {
     const sheets = client(config);
     await ensureTabsExist(sheets, config.spreadsheetId, [config.logTab]);
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: config.spreadsheetId,
-      range: `${config.logTab}!A:F`,
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: rows.map((r) => [
-          r.memberName,
-          r.email ?? "",
-          r.hours,
-          r.source,
-          r.date.toISOString().slice(0, 10),
-          r.recordedBy ?? "",
-        ]),
-      },
-    });
+    await withRetry(() =>
+      sheets.spreadsheets.values.append({
+        spreadsheetId: config.spreadsheetId,
+        range: `${config.logTab}!A:F`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: rows.map((r) => [
+            r.memberName,
+            r.email ?? "",
+            r.hours,
+            r.source,
+            r.date.toISOString().slice(0, 10),
+            r.recordedBy ?? "",
+          ]),
+        },
+      }),
+    );
   } catch (err) {
     console.error("[sheets] append failed:", err);
   }
@@ -124,28 +153,32 @@ export async function syncRosterSheet(rows: RosterRow[]): Promise<SheetWriteResu
   try {
     const sheets = client(config);
     await ensureTabsExist(sheets, config.spreadsheetId, [config.rosterTab]);
-    await sheets.spreadsheets.values.clear({
-      spreadsheetId: config.spreadsheetId,
-      range: `${config.rosterTab}!A:F`,
-    });
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: config.spreadsheetId,
-      range: `${config.rosterTab}!A1`,
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [
-          ROSTER_HEADER,
-          ...rows.map((r) => [
-            r.name,
-            r.email,
-            r.gradYear,
-            r.hoursCompleted,
-            r.remaining,
-            r.events,
-          ]),
-        ],
-      },
-    });
+    await withRetry(() =>
+      sheets.spreadsheets.values.clear({
+        spreadsheetId: config.spreadsheetId,
+        range: `${config.rosterTab}!A:F`,
+      }),
+    );
+    await withRetry(() =>
+      sheets.spreadsheets.values.update({
+        spreadsheetId: config.spreadsheetId,
+        range: `${config.rosterTab}!A1`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [
+            ROSTER_HEADER,
+            ...rows.map((r) => [
+              r.name,
+              r.email,
+              r.gradYear,
+              r.hoursCompleted,
+              r.remaining,
+              r.events,
+            ]),
+          ],
+        },
+      }),
+    );
     return { ok: true, count: rows.length };
   } catch (err) {
     console.error("[sheets] roster sync failed:", err);

@@ -116,7 +116,7 @@ export function SheetsForm({
     {},
   );
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} encType="multipart/form-data" className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Google Sheets backup</h2>
         <StatusPill configured={configured} />
@@ -135,19 +135,26 @@ export function SheetsForm({
         />
       </div>
       <div>
-        <label htmlFor="sheetsServiceEmail" className={label}>
-          Service-account email
+        <label htmlFor="sheetsJson" className={label}>
+          Service-account JSON key file
         </label>
         <input
-          id="sheetsServiceEmail"
-          name="sheetsServiceEmail"
-          type="email"
-          defaultValue={serviceEmail}
-          required
-          className={field}
+          id="sheetsJson"
+          name="sheetsJson"
+          type="file"
+          accept="application/json,.json"
+          className="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
         />
         <p className="mt-1 text-xs text-gray-500">
-          Share the spreadsheet with this address (Editor).
+          Upload the service-account JSON key file from Google Cloud. Share the
+          spreadsheet with that account&apos;s email (Editor).
+          {configured && serviceEmail ? (
+            <>
+              {" "}
+              Current account: <span className="font-medium">{serviceEmail}</span>.
+              Leave this empty to keep it.
+            </>
+          ) : null}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -180,23 +187,6 @@ export function SheetsForm({
           Roster tab is a live snapshot of every member; the Log tab keeps an append-only
           history of credited hours.
         </p>
-      </div>
-      <div>
-        <label htmlFor="sheetsPrivateKey" className={label}>
-          Service-account private key
-        </label>
-        <textarea
-          id="sheetsPrivateKey"
-          name="sheetsPrivateKey"
-          rows={3}
-          placeholder={
-            configured
-              ? "•••••••• (stored — paste to replace)"
-              : "-----BEGIN PRIVATE KEY----- … or base64"
-          }
-          required
-          className={field}
-        />
       </div>
       <div>
         <label htmlFor="sheetsPassword" className={label}>

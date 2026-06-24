@@ -131,29 +131,36 @@ export async function updateMailConfig(input: {
 
 export async function updateSheetsConfig(input: {
   spreadsheetId: string;
-  serviceEmail: string;
-  privateKey: string;
+  // Credentials are optional: omit them to keep the stored service account
+  // (e.g. when an officer edits only the spreadsheet ID or tab names).
+  serviceEmail?: string;
+  privateKey?: string;
   rosterTab?: string;
   logTab?: string;
 }): Promise<void> {
   const rosterTab = input.rosterTab?.trim() || DEFAULT_ROSTER_TAB;
   const logTab = input.logTab?.trim() || DEFAULT_LOG_TAB;
+  const creds =
+    input.serviceEmail && input.privateKey
+      ? {
+          sheetsServiceEmail: input.serviceEmail,
+          sheetsPrivateKeyEnc: encryptSecret(input.privateKey),
+        }
+      : {};
   await db.integrationSettings.upsert({
     where: { id: 1 },
     update: {
       sheetsSpreadsheetId: input.spreadsheetId,
-      sheetsServiceEmail: input.serviceEmail,
-      sheetsPrivateKeyEnc: encryptSecret(input.privateKey),
       sheetsRosterTab: rosterTab,
       sheetsLogTab: logTab,
+      ...creds,
     },
     create: {
       id: 1,
       sheetsSpreadsheetId: input.spreadsheetId,
-      sheetsServiceEmail: input.serviceEmail,
-      sheetsPrivateKeyEnc: encryptSecret(input.privateKey),
       sheetsRosterTab: rosterTab,
       sheetsLogTab: logTab,
+      ...creds,
     },
   });
 }

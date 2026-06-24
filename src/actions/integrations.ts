@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/current-user";
 import {
   updateMailConfig,
   updateSheetsConfig,
+  isSheetsConfigured,
 } from "@/lib/services/integration-service";
 import { syncRosterNow } from "@/lib/services/sheet-sync-service";
 import { recordAudit } from "@/lib/services/audit-service";
@@ -50,12 +51,32 @@ export async function updateSheetsAction(
   if (!officer) return { error: "Incorrect password." };
 
   const spreadsheetId = String(formData.get("sheetsSpreadsheetId") ?? "").trim();
-  const serviceEmail = String(formData.get("sheetsServiceEmail") ?? "").trim();
-  const privateKey = String(formData.get("sheetsPrivateKey") ?? "").trim();
   const rosterTab = String(formData.get("sheetsRosterTab") ?? "").trim();
   const logTab = String(formData.get("sheetsLogTab") ?? "").trim();
-  if (!spreadsheetId || !serviceEmail || !privateKey) {
-    return { error: "Spreadsheet ID, service-account email, and key are all required." };
+  if (!spreadsheetId) {
+    return { error: "Spreadsheet ID is required." };
+  }
+
+  // Credentials come from an uploaded service-account JSON key file. When editing
+  // an already-configured integration, the file is optional — omit it to keep the
+  // stored service account and change only the spreadsheet ID / tab names.
+  const file = formData.get("sheetsJson");
+  let serviceEmail: string | undefined;
+  let privateKey: string | undefined;
+  if (file instanceof File && file.size > 0) {
+    try {
+      const json = JSON.parse(await file.text());
+      serviceEmail = String(json.client_email ?? "").trim();
+      privateKey = String(json.private_key ?? "").trim();
+      if (!serviceEmail || !privateKey) throw new Error("missing fields");
+    } catch {
+      return {
+        error:
+          "That doesn't look like a valid service-account JSON key file (missing client_email / private_key).",
+      };
+    }
+  } else if (!(await isSheetsConfigured())) {
+    return { error: "Upload the service-account JSON key file from Google Cloud." };
   }
 
   await updateSheetsConfig({ spreadsheetId, serviceEmail, privateKey, rosterTab, logTab });
