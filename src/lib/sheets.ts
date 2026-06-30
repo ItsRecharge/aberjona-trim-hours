@@ -1,11 +1,18 @@
 import https from "node:https";
+// @ts-expect-error node-fetch v2 ships no types; resolved at runtime (gaxios dep).
+import nodeFetch from "node-fetch";
 import { google, type sheets_v4 } from "googleapis";
 import { getSheetsConfig, type SheetsConfig } from "./services/integration-service";
 
-// Reusing one agent forces gaxios (used by googleapis) onto Node's native https
-// transport instead of Next.js's patched global fetch (undici) — which otherwise
-// aborts the OAuth token response with "Premature close".
+// gaxios (used by googleapis) defaults to the global `fetch`, which under the
+// Next.js server runtime is a patched undici that aborts the OAuth token
+// response mid-stream → "Premature close". Forcing gaxios to use node-fetch
+// (its own bundled dependency) routes requests through Node's http stack and
+// sidesteps the patched fetch entirely. The keep-alive agent is reused for perf.
 const keepAliveAgent = new https.Agent({ keepAlive: true });
+// node-fetch v2's signature differs from the DOM `fetch`; gaxios only needs it
+// to be callable, so cast to the shape gaxios expects.
+const fetchImpl = nodeFetch as unknown as typeof fetch;
 
 /** Retries a transient network failure a few times before giving up. */
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
@@ -62,11 +69,15 @@ function client(config: SheetsConfig): sheets_v4.Sheets {
     key: config.privateKey,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
-  // Pin the OAuth token request to the Node https transport (avoids "Premature close").
+  // Pin the OAuth token request to node-fetch (avoids "Premature close").
   const transporter = auth.transporter as { defaults?: Record<string, unknown> };
-  transporter.defaults = { ...transporter.defaults, agent: keepAliveAgent };
+  transporter.defaults = {
+    ...transporter.defaults,
+    fetchImplementation: fetchImpl,
+    agent: keepAliveAgent,
+  };
   // Same for the Sheets data requests.
-  google.options({ agent: keepAliveAgent });
+  google.options({ fetchImplementation: fetchImpl, agent: keepAliveAgent } as never);
   return google.sheets({ version: "v4", auth });
 }
 

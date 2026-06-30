@@ -17,6 +17,9 @@ data/*.db-shm
 .env.local
 .env*.local
 
+# google service account credentials
+google_service/
+
 # misc
 .DS_Store
 coverage/
