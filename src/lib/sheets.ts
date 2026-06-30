@@ -8,8 +8,13 @@ import { getSheetsConfig, type SheetsConfig } from "./services/integration-servi
 // Next.js server runtime is a patched undici that aborts the OAuth token
 // response mid-stream → "Premature close". Forcing gaxios to use node-fetch
 // (its own bundled dependency) routes requests through Node's http stack and
-// sidesteps the patched fetch entirely. The keep-alive agent is reused for perf.
-const keepAliveAgent = new https.Agent({ keepAlive: true });
+// sidesteps the patched fetch entirely.
+//
+// keepAlive is OFF on purpose: on serverless/edge hosts the runtime freezes
+// between invocations, so a pooled keep-alive socket goes dead and the next
+// request reuses it → "Premature close". A fresh connection per request avoids
+// that (the cost is one TLS handshake, negligible for our low call volume).
+const httpsAgent = new https.Agent({ keepAlive: false });
 // node-fetch v2's signature differs from the DOM `fetch`; gaxios only needs it
 // to be callable, so cast to the shape gaxios expects.
 const fetchImpl = nodeFetch as unknown as typeof fetch;
@@ -74,10 +79,10 @@ function client(config: SheetsConfig): sheets_v4.Sheets {
   transporter.defaults = {
     ...transporter.defaults,
     fetchImplementation: fetchImpl,
-    agent: keepAliveAgent,
+    agent: httpsAgent,
   };
   // Same for the Sheets data requests.
-  google.options({ fetchImplementation: fetchImpl, agent: keepAliveAgent } as never);
+  google.options({ fetchImplementation: fetchImpl, agent: httpsAgent } as never);
   return google.sheets({ version: "v4", auth });
 }
 
