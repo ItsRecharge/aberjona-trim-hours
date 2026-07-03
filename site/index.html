@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aberjona Tri-M Hours Log — Documentation</title>
+<meta name="description" content="Documentation for the Aberjona Tri-M Hours Log: a volunteer-hours tracker for the Tri-M Music Honor Society. Startup guide, screenshots, FAQ, and debugging.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%BC%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#FDFBF5; --paper-deep:#F5EFE2; --ink:#231D18; --ink-soft:#5C5347;
+  --crimson:#A6252F; --crimson-deep:#7E1B23; --amber:#C57A10; --amber-soft:#F7E8CF;
+  --line:#E6DCC8; --staff:#D8CCB2; --card:#FFFFFF;
+  --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
+body{background:var(--paper);color:var(--ink);font:16px/1.65 "Public Sans",system-ui,sans-serif}
+h1,h2,h3,h4{font-family:"Fraunces",Georgia,serif;line-height:1.15}
+a{color:var(--crimson)}
+img{max-width:100%;height:auto;display:block}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:.1em .35em}
+pre{background:#2A241E;color:#F3EAD8;border-radius:10px;padding:1rem 1.25rem;overflow-x:auto;margin:1rem 0;font-size:.85rem;line-height:1.6}
+pre code{background:none;border:none;color:inherit;padding:0;font-size:1em}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+
+/* staff-line divider: the five-line signature motif */
+.staff{height:34px;margin:0;position:relative;background:
+  repeating-linear-gradient(to bottom,transparent 0 6px,var(--staff) 6px 7px) center/min(520px,80%) 31px no-repeat}
+.staff::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);
+  background:var(--crimson);border-radius:50% 50% 50% 50%/60% 60% 40% 40%;rotate:-20deg}
+
+/* nav */
+nav{position:sticky;top:0;z-index:50;background:rgba(253,251,245,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:1.4rem;height:60px}
+.brand{font-family:"Fraunces",serif;font-weight:900;font-size:1.05rem;color:var(--ink);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--crimson)}
+nav ul{display:flex;gap:1.15rem;list-style:none;margin-left:auto;overflow-x:auto}
+nav ul a{color:var(--ink-soft);text-decoration:none;font-size:.85rem;font-weight:600;letter-spacing:.02em;white-space:nowrap;padding:.35rem 0;border-bottom:2px solid transparent}
+nav ul a:hover{color:var(--crimson);border-bottom-color:var(--amber)}
+
+/* hero — a concert program cover */
+header{border-bottom:1px solid var(--line);background:
+  linear-gradient(to bottom,var(--paper) 0%,var(--paper-deep) 100%)}
+.hero{padding:4.5rem 0 3rem;text-align:center}
+.eyebrow{display:inline-block;font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);border:1px solid var(--line);border-radius:999px;padding:.3rem .9rem;background:var(--card)}
+.hero h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;margin:1.1rem 0 .4rem}
+.hero h1 em{font-style:italic;color:var(--crimson)}
+.hero .tagline{max-width:620px;margin:0 auto;color:var(--ink-soft);font-size:1.08rem}
+.hero-rule{display:flex;align-items:center;gap:.8rem;justify-content:center;margin:1.6rem 0;color:var(--staff)}
+.hero-rule::before,.hero-rule::after{content:"";height:1px;width:min(160px,25vw);background:var(--staff)}
+.cta-row{display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap;margin-top:1.6rem}
+.btn{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;font-weight:700;font-size:.92rem;border-radius:8px;padding:.72rem 1.35rem;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--crimson);color:#fff;box-shadow:0 3px 0 var(--crimson-deep)}
+.btn-ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.hero-shot{max-width:880px;margin:3rem auto 0;border-radius:12px 12px 0 0;overflow:hidden;border:1px solid var(--line);border-bottom:none;box-shadow:0 -18px 50px rgba(166,37,47,.08)}
+.hero-shot img{width:100%}
+
+/* sections */
+section{padding:4rem 0}
+.sec-head{max-width:640px;margin-bottom:2.2rem}
+.sec-head .tempo{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);font-weight:600}
+.sec-head h2{font-size:clamp(1.7rem,3.5vw,2.4rem);font-weight:700;margin:.35rem 0 .55rem}
+.sec-head p{color:var(--ink-soft)}
+.alt{background:var(--paper-deep);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+/* feature grid */
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:1.1rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.35rem 1.4rem}
+.card h3{font-size:1.05rem;margin-bottom:.45rem}
+.card p{font-size:.92rem;color:var(--ink-soft)}
+.card .glyph{width:34px;height:34px;border-radius:8px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;margin-bottom:.8rem;color:var(--crimson)}
+
+/* screenshots */
+.gallery-group{margin-bottom:2.6rem}
+.gallery-group h3{font-size:1.2rem;margin-bottom:.35rem}
+.gallery-group>p{color:var(--ink-soft);font-size:.92rem;margin-bottom:1.1rem;max-width:640px}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.2rem}
+figure.shot{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+figure.shot img{width:100%;aspect-ratio:1440/900;object-fit:cover;object-position:top;border-bottom:1px solid var(--line)}
+figure.shot figcaption{padding:.75rem 1rem;font-size:.83rem;color:var(--ink-soft)}
+figure.shot figcaption strong{color:var(--ink);display:block;font-size:.88rem}
+
+/* steps */
+.steps{counter-reset:step;display:grid;gap:1rem;max-width:820px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.3rem 1.4rem 1.3rem 4.2rem;position:relative}
+.step::before{counter-increment:step;content:counter(step);position:absolute;left:1.15rem;top:1.25rem;width:2rem;height:2rem;border-radius:50%;background:var(--crimson);color:#fff;font-family:"Fraunces",serif;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+.step h3{font-size:1.02rem;margin-bottom:.35rem}
+.step p{font-size:.92rem;color:var(--ink-soft)}
+.step pre{margin:.7rem 0 0}
+
+/* docs */
+.doc-cols{display:grid;grid-template-columns:1fr 1fr;gap:2.4rem}
+@media(max-width:820px){.doc-cols{grid-template-columns:1fr}}
+.doc-block h3{font-size:1.15rem;margin:1.6rem 0 .6rem;padding-bottom:.35rem;border-bottom:2px solid var(--amber-soft)}
+.doc-block h3:first-child{margin-top:0}
+.doc-block p,.doc-block li{font-size:.93rem;color:var(--ink-soft)}
+.doc-block ul{padding-left:1.2rem;display:grid;gap:.4rem}
+.doc-block li strong,.doc-block p strong{color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:.88rem;margin:.8rem 0}
+th{text-align:left;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--amber);border-bottom:2px solid var(--line);padding:.5rem .6rem}
+td{border-bottom:1px solid var(--line);padding:.55rem .6rem;color:var(--ink-soft);vertical-align:top}
+td code{white-space:nowrap}
+.table-scroll{overflow-x:auto}
+.step,.doc-block,.card,figure.shot,.doc-cols,.steps{min-width:0}
+pre{max-width:100%}
+body{overflow-x:clip}
+
+/* FAQ + debugging */
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:.7rem;overflow:hidden}
+summary{cursor:pointer;padding:1rem 1.25rem;font-weight:600;font-size:.95rem;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:"Fraunces",serif;font-size:1.3rem;color:var(--amber);flex-shrink:0}
+details[open] summary::after{content:"–"}
+details .body{padding:0 1.25rem 1.1rem;font-size:.92rem;color:var(--ink-soft)}
+details .body p{margin-bottom:.6rem}
+details .body p:last-child{margin-bottom:0}
+.debug summary{font-family:var(--mono);font-size:.85rem;font-weight:500}
+.debug summary .sym{color:var(--crimson);font-weight:700}
+.fix-label{display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:var(--amber);border-radius:4px;padding:.15rem .5rem;margin:.2rem 0 .4rem}
+
+footer{border-top:1px solid var(--line);background:var(--paper-deep);padding:2.5rem 0;text-align:center;color:var(--ink-soft);font-size:.85rem}
+footer a{color:var(--crimson)}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top">Aberjona <span>Tri-M</span> Hours Log</a>
+    <ul>
+      <li><a href="#screens">Screenshots</a></li>
+      <li><a href="#start">Startup guide</a></li>
+      <li><a href="#docs">Documentation</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#debug">Debugging</a></li>
+      <li><a href="https://github.com/ItsRecharge/aberjona-trim-hours">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header id="top">
+  <div class="wrap hero">
+    <span class="eyebrow">Tri-M Music Honor Society · Chapter Software</span>
+    <h1>Every hour of service,<br><em>on the record.</em></h1>
+    <p class="tagline">A volunteer-hours tracker for the Aberjona chapter of the Tri-M Music Honor Society.
+    Members sign up for events and log service; officers run events, take attendance, and manage the roster —
+    with email at every moment that matters.</p>
+    <div class="hero-rule" aria-hidden="true">
+      <svg width="20" height="26" viewBox="0 0 20 26" fill="none" aria-hidden="true"><path d="M7 2v16.5a4.5 4.5 0 1 1-2-3.74V2h2zm0 0c0 4 6 4 6 9" stroke="#A6252F" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#start">Get it running</a>
+      <a class="btn btn-ghost" href="https://github.com/ItsRecharge/aberjona-trim-hours">View source on GitHub</a>
+    </div>
+    <div class="hero-shot">
+      <img src="img/member-01-dashboard.png" alt="Member dashboard showing the service-hours progress bar toward the yearly goal, upcoming signups, and event request status" width="1440" height="900" fetchpriority="high">
+    </div>
+  </div>
+</header>
+
+<div class="staff" role="presentation"></div>
+
+<section id="overview">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tempo">Overture · What it does</span>
+      <h2>Built for how a chapter actually runs</h2>
+      <p>Rewritten from the original Flask demo as a multi-user Next.js 15 app with real authentication, transactional email, and a Google Sheets backup.</p>
+    </div>
+    <div class="grid3">
+      <div class="card">
+        <div class="glyph"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
+        <h3>Invite-only membership</h3>
+        <p>Officers generate invite links with expiry and optional max-uses. Email verification is required before first login; password reset works over email too.</p>
+      </div>
+      <div class="card">
+        <div class="glyph"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></div>
+        <h3>Progress toward the goal</h3>
+        <p>Every member sees hours earned vs. the yearly goal. Bars turn yellow at 30% and green at 70%, with pending self-reports called out separately.</p>
+      </div>
+      <div class="card">
+        <div class="glyph"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></div>
+        <h3>Events with timeslots</h3>
+        <p>Events carry one or more timeslots with hours values and volunteer caps. Full slots queue a FIFO waitlist that auto-promotes and emails the next member.</p>
+      </div>
+      <div class="card">
+        <div class="glyph"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></div>
+        <h3>Email at the right moments</h3>
+        <p>New events, approvals, denials, credited hours, waitlist promotions, cancellations, and a one-click personalized hours-reminder broadcast.</p>
+      </div>
+      <div class="card">
+        <div class="glyph"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <h3>Google Sheets backup</h3>
+        <p>Each attendance submission appends credited-hours rows (member, hours, event, date) to a spreadsheet via a service account.</p>
+      </div>
+      <div class="card">
+        <div class="glyph"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Hardened by default</h3>
+        <p>Zod validation, rate-limited auth endpoints, no account enumeration, hashed one-time tokens, bcrypt passwords, and role checks re-verified in every server action.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screens" class="alt">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tempo">Movement I · Screenshots</span>
+      <h2>A tour of the app</h2>
+      <p>All screenshots come from the running app seeded with demo data.</p>
+    </div>
+
+    <div class="gallery-group">
+      <h3>Public &amp; account pages</h3>
+      <p>The public front door, invite-only signup, and self-service password recovery.</p>
+      <div class="shots">
+        <figure class="shot"><img loading="lazy" src="img/01-landing.png" alt="Public landing page with Log in and Sign up paths" width="1440" height="900"><figcaption><strong>Landing page</strong>The public front door: log in, or sign up with an invite link.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/02-login.png" alt="Login page with email and password fields" width="1440" height="900"><figcaption><strong>Log in</strong>Members route to their dashboard, officers to the Officer Panel.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/03-signup.png" alt="Invite-only signup form" width="1440" height="900"><figcaption><strong>Sign up (invite-only)</strong>Reachable only through a valid officer-generated invite link.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="gallery-group">
+      <h3>Member experience</h3>
+      <p>Dashboard, event signups, an itemized hours ledger, self-reported hours, and event requests.</p>
+      <div class="shots">
+        <figure class="shot"><img loading="lazy" src="img/member-01-dashboard.png" alt="Member dashboard with progress bar and upcoming timeslots" width="1440" height="900"><figcaption><strong>Dashboard</strong>Hours vs. yearly goal, upcoming signups, and request status.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/member-02-events.png" alt="Volunteer events list with timeslot signups" width="1440" height="900"><figcaption><strong>Volunteer events</strong>Sign up per timeslot; full slots queue a FIFO waitlist.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/member-03-history.png" alt="Hours history ledger" width="1440" height="900"><figcaption><strong>Hours history</strong>Every credited item: events, approved reports, adjustments.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/member-04-report-hours.png" alt="Report hours form" width="1440" height="900"><figcaption><strong>Report hours</strong>Outside-event service, pending until an officer approves.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="gallery-group">
+      <h3>Officer panel</h3>
+      <p>Everything officers need: events, attendance, the review queue, roster, invites, and the admin hub.</p>
+      <div class="shots">
+        <figure class="shot"><img loading="lazy" src="img/officer-01-dashboard.png" alt="Officer dashboard with member progress table" width="1440" height="900"><figcaption><strong>Dashboard</strong>Every member's progress, plus the one-click hours-reminder email.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/officer-02-events.png" alt="Officer events page with create form and events table" width="1440" height="900"><figcaption><strong>Events</strong>Create events with multiple timeslots; edit or take attendance.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/officer-03-attendance.png" alt="Attendance page listing confirmed volunteers" width="1440" height="900"><figcaption><strong>Take attendance</strong>Check off who showed up — credited members get an email.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/officer-05-requests.png" alt="Requests review queue" width="1440" height="900"><figcaption><strong>Requests &amp; reports</strong>Approve or deny event requests and hour reports.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/officer-08-invites.png" alt="Invite links page" width="1440" height="900"><figcaption><strong>Invite links</strong>Expiry, max uses, role — revocable at any time.</figcaption></figure>
+        <figure class="shot"><img loading="lazy" src="img/officer-13-reset.png" alt="Year-end reset page with triple confirmation" width="1440" height="900"><figcaption><strong>Year-end reset</strong>Triple-gated: dynamic phrase, password, and checkbox.</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="staff" role="presentation"></div>
+
+<section id="start">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tempo">Movement II · Startup guide</span>
+      <h2>From clone to first login</h2>
+      <p>You need <strong>Node.js 18+</strong> and npm. The database is SQLite, so there is nothing else to install.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Install and configure</h3>
+        <p>Clone the repo, install dependencies, and copy the example environment file.</p>
+        <pre><code>git clone https://github.com/ItsRecharge/aberjona-trim-hours
+cd aberjona-trim-hours
+npm install
+cp .env.example .env</code></pre>
+      </div>
+      <div class="step">
+        <h3>Fill in the required environment values</h3>
+        <p>Open <code>.env</code> and set: <code>DATABASE_URL</code> (e.g. <code>file:../data/app.db</code>), <code>SESSION_SECRET</code> (generate with <code>openssl rand -base64 32</code>), <code>APP_URL</code> (<code>http://localhost:3000</code> for dev), and the bootstrap officer's <code>BOOTSTRAP_OFFICER_EMAIL</code> / <code>BOOTSTRAP_OFFICER_PASSWORD</code> / <code>BOOTSTRAP_OFFICER_NAME</code>. Optionally set <code>SEED_DEMO=true</code> to get demo events and a demo member.</p>
+      </div>
+      <div class="step">
+        <h3>Create the database and seed it</h3>
+        <p>Migrations create the SQLite file; the seed script creates the bootstrap officer (pre-verified, so no email round-trip is needed).</p>
+        <pre><code>npx prisma migrate dev
+npm run db:seed</code></pre>
+      </div>
+      <div class="step">
+        <h3>Start the dev server</h3>
+        <pre><code>npm run dev     # http://localhost:3000</code></pre>
+      </div>
+      <div class="step">
+        <h3>First run: bootstrap the chapter</h3>
+        <p>Log in with the bootstrap officer account → go to <strong>Invites</strong> → create an invite link → open it to sign up a member → verify via the emailed link → log in. Officers create events and take attendance; members sign up and watch their progress bar fill toward the yearly goal.</p>
+      </div>
+      <div class="step">
+        <h3>Optional: connect email and the Sheets backup</h3>
+        <p>Both are no-ops until configured — the app runs fine without them. Configure Gmail (app password) and the Google Sheets service account either in <code>.env</code> or live from the <strong>Officer Panel → Admin → Integrations</strong> page, no redeploy needed.</p>
+      </div>
+      <div class="step">
+        <h3>Verify with the test suite</h3>
+        <pre><code>npm test            # vitest: pure logic + service tests on a temp SQLite DB
+npm run typecheck   # tsc --noEmit
+npm run build       # production build</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="docs" class="alt">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tempo">Movement III · Full documentation</span>
+      <h2>How the system fits together</h2>
+    </div>
+    <div class="doc-cols">
+      <div class="doc-block">
+        <h3>Stack</h3>
+        <ul>
+          <li><strong>Next.js 15</strong> — App Router, TypeScript, Server Actions</li>
+          <li><strong>Tailwind CSS v4</strong> for styling</li>
+          <li><strong>Prisma on SQLite</strong> — swap <code>provider</code> to Postgres for scale</li>
+          <li><strong>jose</strong> HS256 HTTP-only session cookies, gated in <code>middleware.ts</code></li>
+          <li><strong>Nodemailer</strong> (Gmail SMTP) for all outgoing mail</li>
+          <li><strong>googleapis</strong> service account for the Sheets backup</li>
+          <li><strong>Vitest</strong> for unit and service tests</li>
+        </ul>
+
+        <h3>Roles &amp; access</h3>
+        <p><strong>Members</strong> browse events, sign up for timeslots, self-report hours, request events, and track progress. <strong>Officers</strong> get the Officer Panel: events, attendance, the review queue, roster management, invites, and the admin hub (chapter settings, integrations, audit log, year-end reset). Role checks are enforced in middleware <em>and</em> re-checked against the database in every server action.</p>
+
+        <h3>The hours model</h3>
+        <p>The school year runs <strong>Sept 1 – Aug 31</strong>. Three things count toward the yearly goal:</p>
+        <ul>
+          <li><strong>Attended events</strong> — credited when an officer records attendance</li>
+          <li><strong>Approved hour reports</strong> — self-reported service, pending until approved</li>
+          <li><strong>Officer adjustments</strong> — positive or negative corrections with a reason</li>
+        </ul>
+        <p>The chapter's yearly goal (set in Chapter settings) drives every progress bar: yellow at 30%, green at 70%.</p>
+
+        <h3>Waitlists</h3>
+        <p>When a timeslot is full, joining places the member on a FIFO waitlist. If someone withdraws, the next person is automatically promoted and emailed.</p>
+
+        <h3>Year-end reset</h3>
+        <p>Clears outgoing members and the year's activity while keeping officers, chapter settings, integrations, and the audit log. Guarded by a triple gate: type the dynamic phrase <code>RESET &lt;N&gt; MEMBERS</code>, re-enter your password, and tick the confirmation box. The count is re-checked server-side.</p>
+      </div>
+
+      <div class="doc-block">
+        <h3>Environment reference</h3>
+        <div class="table-scroll">
+        <table>
+          <tr><th>Variable</th><th>Purpose</th></tr>
+          <tr><td><code>DATABASE_URL</code></td><td>SQLite path, e.g. <code>file:../data/app.db</code> <em>(required)</em></td></tr>
+          <tr><td><code>SESSION_SECRET</code></td><td>HS256 signing key — <code>openssl rand -base64 32</code> <em>(required)</em></td></tr>
+          <tr><td><code>APP_URL</code></td><td>Base URL used inside email links <em>(required)</em></td></tr>
+          <tr><td><code>BOOTSTRAP_OFFICER_*</code></td><td>EMAIL / PASSWORD / NAME for the first officer, created pre-verified by the seed <em>(required)</em></td></tr>
+          <tr><td><code>SEED_DEMO</code></td><td><code>true</code> seeds demo events + a demo member (local only)</td></tr>
+          <tr><td><code>GMAIL_USER</code>, <code>GMAIL_APP_PASSWORD</code></td><td>Outgoing mail. Unset → all email becomes a no-op</td></tr>
+          <tr><td><code>GOOGLE_SHEETS_SPREADSHEET_ID</code>, <code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code>GOOGLE_SERVICE_ACCOUNT_KEY</code></td><td>Sheets backup. Key is base64-encoded to avoid newline issues. Unset → no-op</td></tr>
+        </table>
+        </div>
+
+        <h3>Email notifications</h3>
+        <div class="table-scroll">
+        <table>
+          <tr><th>Trigger</th><th>Recipient</th></tr>
+          <tr><td>Invite / verification / email change / password reset</td><td>The affected user</td></tr>
+          <tr><td>New event posted</td><td>All active members</td></tr>
+          <tr><td>Event request approved or denied</td><td>The requesting member</td></tr>
+          <tr><td>New event request submitted</td><td>All officers</td></tr>
+          <tr><td>Hours credited from attendance</td><td>The credited member</td></tr>
+          <tr><td>Hour report approved or denied</td><td>The reporting member</td></tr>
+          <tr><td>Waitlist spot opens</td><td>The promoted member</td></tr>
+          <tr><td>Event cancelled</td><td>Signed-up members</td></tr>
+          <tr><td>Hours reminder (officer button)</td><td>Every active member, personalized</td></tr>
+        </table>
+        </div>
+        <p>Broadcasts are sent BCC in chunks to stay inside Gmail's ~500 recipients/day cap.</p>
+
+        <h3>Security model</h3>
+        <ul>
+          <li>Invite-only signup with expiring, usage-capped links</li>
+          <li>bcrypt password hashes; sha256-hashed one-time tokens</li>
+          <li>In-memory rate limiting on auth endpoints</li>
+          <li>Identical responses on login/reset whether or not the account exists (no enumeration)</li>
+          <li>Server-side session tracking with "Sign out everywhere"</li>
+          <li>Integration secrets encrypted at rest, never displayed again, and saving them requires the officer's password</li>
+          <li>Audit log of every officer action, retained through year-end resets</li>
+        </ul>
+
+        <h3>Scaling notes</h3>
+        <ul>
+          <li>In-memory rate limiting is per-process — move to Redis/Upstash before any serverless or multi-instance deployment.</li>
+          <li>SQLite is fine for a single chapter. For higher concurrency, point Prisma at Postgres and convert the string role/status/type columns to native enums.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tempo">Movement IV · FAQ</span>
+      <h2>Frequently asked questions</h2>
+    </div>
+    <details>
+      <summary>Why is signup invite-only?</summary>
+      <div class="body"><p>Chapter rosters are curated — open registration would let anyone claim membership. Officers generate invite links with an expiry and an optional max-use count, and can revoke any outstanding link. Opening <code>/signup</code> without a valid invite shows an "invite required" message.</p></div>
+    </details>
+    <details>
+      <summary>What counts toward the yearly hours goal?</summary>
+      <div class="body"><p>Three things: hours credited by officers taking attendance at events, self-reported hours <em>after</em> an officer approves them, and manual officer adjustments (which can be negative, with a reason). The year runs September 1 to August 31.</p></div>
+    </details>
+    <details>
+      <summary>What do the progress-bar colors mean?</summary>
+      <div class="body"><p>Bars are color-coded against the chapter's yearly goal: yellow from 30%, green from 70%. The goal itself is configurable in <strong>Officer Panel → Admin → Chapter settings</strong>, and every member's "hours remaining" math follows it.</p></div>
+    </details>
+    <details>
+      <summary>What happens when an event timeslot is full?</summary>
+      <div class="body"><p>Joining a full slot adds you to a first-in-first-out waitlist. If a confirmed volunteer withdraws, the first person on the waitlist is automatically promoted and notified by email — no officer action needed.</p></div>
+    </details>
+    <details>
+      <summary>Does the app work without configuring Gmail or Google Sheets?</summary>
+      <div class="body"><p>Yes. Both integrations are deliberate no-ops until configured. Everything else — signups, events, attendance, approvals — works normally; you just won't get emails or the spreadsheet backup. You can add both later from the Integrations page without redeploying.</p></div>
+    </details>
+    <details>
+      <summary>Are there demo accounts?</summary>
+      <div class="body"><p>With <code>SEED_DEMO=true</code>, the seed creates demo data including an officer (<code>officer@demo.local</code> / <code>OfficerDemo1!</code>) and a member (<code>member1@demo.local</code> / <code>MemberDemo1!</code>). This is for local use only.</p></div>
+    </details>
+    <details>
+      <summary>How do I make someone an officer?</summary>
+      <div class="body"><p>Open <strong>Officer Panel → Members</strong>, click the member, and use <strong>Promote to officer</strong> under Manage. The same page lets you deactivate an account or adjust hours.</p></div>
+    </details>
+    <details>
+      <summary>How do we start a new school year?</summary>
+      <div class="body"><p>Use <strong>Officer Panel → Admin → Year-end reset</strong>. It removes outgoing members and the year's activity but keeps officers, chapter settings, integrations, and the audit log. It's irreversible, so it's guarded by three confirmations, and the page recommends backing up the database file first.</p></div>
+    </details>
+    <details>
+      <summary>Can this run on Postgres instead of SQLite?</summary>
+      <div class="body"><p>Yes — change the Prisma datasource <code>provider</code> to <code>postgresql</code>, point <code>DATABASE_URL</code> at your database, and re-run migrations. Recommended once you outgrow a single chapter or need concurrent writes.</p></div>
+    </details>
+  </div>
+</section>
+
+<section id="debug" class="alt debug">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tempo">Coda · Debugging</span>
+      <h2>When something sounds off</h2>
+      <p>The most common issues, with the fix for each.</p>
+    </div>
+    <details>
+      <summary><span><span class="sym">✗</span> No emails are being sent</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Email is a no-op until Gmail is configured. Set <code>GMAIL_USER</code> and <code>GMAIL_APP_PASSWORD</code> in <code>.env</code>, or configure them live under <strong>Officer Panel → Admin → Integrations</strong>.</p>
+        <p>Note the password must be a Google <strong>App Password</strong> (requires 2-Step Verification, created at <code>myaccount.google.com/apppasswords</code>) — your normal Gmail password will not work. Also remember Gmail caps at ~500 recipients/day.</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> <code>prisma migrate dev</code> fails or the DB file is missing</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Check <code>DATABASE_URL</code> — the SQLite path is resolved relative to the <code>prisma/</code> directory, which is why the example is <code>file:../data/app.db</code>. Make sure the <code>data/</code> directory exists and is writable.</p>
+        <p>To start over locally: delete <code>data/app.db</code>, re-run <code>npx prisma migrate dev</code>, then <code>npm run db:seed</code>.</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> Everyone got logged out unexpectedly</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Session cookies are signed with <code>SESSION_SECRET</code>. If that value changes (new <code>.env</code>, redeploy with a different secret), every existing session cookie becomes invalid and all users must log in again. Keep the secret stable across deploys.</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> Login or password reset returns "too many attempts"</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Auth endpoints are rate-limited in memory. Wait a minute and retry (or restart the dev server locally, which clears the in-memory counters). If you're deploying multiple instances or serverless, move rate limiting to Redis/Upstash — the per-process limiter won't behave correctly there.</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> An invite link says it's invalid</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Invites expire and can carry a max-use count; either condition invalidates the link, as does an officer revoking it. Check <strong>Officer Panel → Invites → Active invites</strong> for its status, or just generate a fresh link.</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> Verification / reset email links point to the wrong host</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Links inside emails are built from <code>APP_URL</code>. Set it to exactly the origin users visit — <code>http://localhost:3000</code> in dev, your real domain in production (no trailing slash).</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> Google Sheets backup isn't appending rows</summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Three usual causes:</p>
+        <p>1) The spreadsheet was never <strong>shared with the service account's email</strong> as an editor — this is the step most people miss.<br>
+        2) <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> wasn't base64-encoded, so newlines in the private key broke parsing.<br>
+        3) The target tab isn't <code>Sheet1</code> — rows are appended to <code>Sheet1!A:D</code>.</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> Port 3000 is already in use</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Run on another port with <code>npm run dev -- -p 3001</code> (and update <code>APP_URL</code> to match so email links stay correct).</p>
+      </div>
+    </details>
+    <details>
+      <summary><span><span class="sym">✗</span> Tests fail after schema changes</span></summary>
+      <div class="body">
+        <span class="fix-label">Fix</span>
+        <p>Service tests run against a temporary SQLite database built from the current Prisma schema. Regenerate the client after schema edits (<code>npx prisma generate</code>) and make sure migrations are up to date (<code>npx prisma migrate dev</code>) before <code>npm test</code>.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<div class="staff" role="presentation"></div>
+
+<footer>
+  <div class="wrap">
+    <p><strong>Aberjona Tri-M Hours Log</strong> — volunteer-hours tracking for the Tri-M Music Honor Society.</p>
+    <p style="margin-top:.5rem"><a href="https://github.com/ItsRecharge/aberjona-trim-hours">Source on GitHub</a> · Built with Next.js 15, Prisma, and Tailwind CSS</p>
+  </div>
+</footer>
+
+</body>
+</html>
