@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tri-M Hours Log — Interactive Demo</title>
+<meta name="description" content="Interactive demo of the Tri-M Hours Log app with example data. Nothing is saved.">
+<style>
+:root{
+  --indigo:#4632DB; --indigo-dark:#3A28B8; --ink:#0F172A; --muted:#64748B;
+  --bg:#F5F6F8; --card:#FFFFFF; --line:#E2E8F0; --gold:#EAB308;
+  --green:#16A34A; --red:#DC2626; --amber-bg:#FEF3C7; --amber-ink:#92400E;
+  --slate-dark:#1D2B36;
+}
+*{box-sizing:border-box;margin:0}
+html{overflow-x:clip}
+body{font:16px/1.5 -apple-system,"Segoe UI",Roboto,Inter,sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;display:flex;flex-direction:column;overflow-x:clip}
+button{font:inherit;cursor:pointer}
+a{color:var(--indigo)}
+/* demo banner */
+.demo-banner{background:#111827;color:#E5E7EB;font-size:.85rem;padding:.55rem 1rem;display:flex;gap:.75rem;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center}
+.demo-banner strong{color:#FDE047;letter-spacing:.04em}
+.demo-banner a{color:#93C5FD}
+.demo-banner .role-btn{background:#374151;color:#F9FAFB;border:1px solid #4B5563;border-radius:999px;padding:.25rem .8rem;font-size:.78rem}
+.demo-banner .role-btn:hover{background:#4B5563}
+/* member topbar */
+.topbar{background:var(--indigo);color:#fff;padding:.9rem 1.2rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.topbar .brand{font-weight:700;font-size:1.05rem;white-space:nowrap}
+.topnav{display:flex;gap:.4rem;flex-wrap:wrap;flex:1}
+.topnav button{background:none;border:0;color:#DDD9FF;padding:.45rem .8rem;border-radius:8px;font-size:.92rem}
+.topnav button:hover{background:rgba(255,255,255,.12);color:#fff}
+.topnav button.on{background:rgba(255,255,255,.18);color:#fff;font-weight:600}
+.whoami{font-size:.85rem;color:#C7C2F5;text-align:right}
+.whoami b{display:block;color:#fff}
+/* layout */
+.page{max-width:1000px;width:100%;margin:0 auto;padding:2rem 1.2rem 3rem;flex:1}
+h1{font-size:1.6rem;margin-bottom:.2rem}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:1.4rem}
+.card{background:var(--card);border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.07);padding:1.3rem 1.5rem;margin-bottom:1.4rem}
+.card h2{font-size:1.12rem;margin-bottom:.9rem}
+/* progress */
+.bignum{font-size:2rem;font-weight:800}
+.bignum small{font-size:1.1rem;color:var(--muted);font-weight:500}
+.meter{height:8px;background:#E5E7EB;border-radius:999px;margin:.7rem 0 .5rem;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--gold);border-radius:999px;transition:width .5s ease}
+.meter i.done{background:var(--green)}
+.row-split{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:.85rem}
+/* lists */
+.item{display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.85rem 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.item:first-of-type{border-top:0}
+.item .t{font-weight:600}
+.item .d{color:var(--muted);font-size:.87rem}
+.pill{font-size:.78rem;font-weight:600;padding:.22rem .7rem;border-radius:999px;white-space:nowrap}
+.pill.pending{background:var(--amber-bg);color:var(--amber-ink)}
+.pill.approved{background:#DCFCE7;color:#166534}
+.pill.rejected{background:#FEE2E2;color:#991B1B}
+.btn{border:0;border-radius:9px;padding:.55rem 1.05rem;font-weight:600;font-size:.9rem}
+.btn-primary{background:var(--indigo);color:#fff}
+.btn-primary:hover{background:var(--indigo-dark)}
+.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn-ghost:hover{background:#F8FAFC}
+.link-red{background:none;border:0;color:var(--red);font-weight:600;font-size:.9rem}
+/* forms */
+label{display:block;font-weight:600;font-size:.92rem;margin:.9rem 0 .35rem}
+input,textarea,select{width:100%;border:1px solid #CBD5E1;border-radius:9px;padding:.6rem .75rem;font:inherit;background:#fff;color:var(--ink)}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--indigo);outline-offset:1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid2>div{min-width:0}
+.form-note{margin-top:.9rem;font-size:.9rem;color:var(--green);font-weight:600;min-height:1.2em}
+/* officer */
+.officer{display:flex;flex:1;min-height:0}
+.sidebar{background:var(--slate-dark);color:#CBD5E1;width:220px;flex-shrink:0;padding:1.3rem 0;display:flex;flex-direction:column}
+.sidebar .brand{color:#fff;font-weight:700;padding:0 1.3rem 1.1rem;display:flex;gap:.5rem;align-items:center}
+.sidebar .brand .star{color:var(--gold)}
+.sidebar button{background:none;border:0;color:#CBD5E1;text-align:left;padding:.6rem 1.3rem;font-size:.93rem;width:100%}
+.sidebar button:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar button.on{background:rgba(255,255,255,.1);color:#fff;font-weight:600}
+.sidebar .foot{margin-top:auto;padding:1rem 1.3rem 0;border-top:1px solid rgba(255,255,255,.08);font-size:.82rem;color:#94A3B8}
+.omain{flex:1;padding:2rem 1.5rem;min-width:0;max-width:1000px}
+table{width:100%;border-collapse:collapse;font-size:.93rem}
+th{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:.7rem .9rem;background:#F8FAFC}
+td{padding:.85rem .9rem;border-top:1px solid var(--line);vertical-align:middle}
+td.num,th.num{text-align:right}
+.tbl-card{background:var(--card);border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.07);overflow-x:auto}
+.mini-meter{height:7px;background:#E5E7EB;border-radius:999px;width:130px;max-width:100%}
+.mini-meter i{display:block;height:100%;background:var(--gold);border-radius:999px}
+.mini-meter i.done{background:var(--green)}
+footer{color:var(--muted);font-size:.85rem;text-align:center;padding:1rem;background:#fff}
+.hidden{display:none!important}
+@media (max-width:720px){
+  .grid2{grid-template-columns:1fr}
+  .officer{flex-direction:column}
+  .sidebar{width:100%;flex-direction:row;flex-wrap:wrap;align-items:center;padding:.5rem}
+  .sidebar .brand{padding:.5rem .8rem}
+  .sidebar button{width:auto;padding:.5rem .8rem}
+  .sidebar .foot{display:none}
+  .omain{padding:1.3rem 1rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="demo-banner">
+  <span><strong>DEMO</strong> — interactive example with sample data. Nothing is saved or sent anywhere.</span>
+  <button class="role-btn" id="roleBtn">Switch to officer view</button>
+  <a href="../">← Back to the docs</a>
+</div>
+
+<!-- ============ MEMBER VIEW ============ -->
+<div id="memberView">
+  <div class="topbar">
+    <span class="brand">🎵 Tri-M Hours Log</span>
+    <nav class="topnav" aria-label="Member navigation">
+      <button data-tab="dash" class="on">Dashboard</button>
+      <button data-tab="events">Events</button>
+      <button data-tab="report">Report Hours</button>
+      <button data-tab="request">Request Event</button>
+    </nav>
+    <div class="whoami"><b>Avery Chen</b>Member · 2025–2026</div>
+  </div>
+
+  <main class="page">
+    <!-- Dashboard -->
+    <section id="tab-dash">
+      <h1>Welcome, Avery</h1>
+      <p class="sub">School year 2025–2026</p>
+
+      <div class="card">
+        <div class="row-split">
+          <div>
+            <p class="hint">Service hours earned</p>
+            <p class="bignum"><span id="earnedNum">0</span> <small>/ 10</small></p>
+          </div>
+          <p class="hint" id="togo" style="text-align:right"></p>
+        </div>
+        <div class="meter"><i id="meterFill" style="width:0%"></i></div>
+        <p class="hint" id="pendingNote"></p>
+      </div>
+
+      <div class="card">
+        <h2>Upcoming timeslots</h2>
+        <div id="upcomingList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Your event requests</h2>
+        <div id="requestList"></div>
+      </div>
+    </section>
+
+    <!-- Events -->
+    <section id="tab-events" class="hidden">
+      <h1>Volunteer events</h1>
+      <p class="sub">Sign up for a timeslot — hours are credited automatically after the event.</p>
+      <div id="eventCards"></div>
+    </section>
+
+    <!-- Report hours -->
+    <section id="tab-report" class="hidden">
+      <h1>Report hours</h1>
+      <p class="sub">Log service hours for activities without an official event. An officer reviews each submission before it counts toward your total.</p>
+      <div class="card" style="max-width:620px">
+        <form id="reportForm">
+          <label for="rDesc">What did you do?</label>
+          <input id="rDesc" required placeholder="e.g. Played violin at the retirement home">
+          <div class="grid2">
+            <div><label for="rDate">Date</label><input id="rDate" type="date" required value="2026-06-28"></div>
+            <div><label for="rHours">Hours</label><input id="rHours" type="number" min="0.5" max="12" step="0.5" required placeholder="1.5"></div>
+          </div>
+          <label for="rNotes">Notes (optional)</label>
+          <textarea id="rNotes" rows="3"></textarea>
+          <p style="margin-top:1rem"><button class="btn btn-primary" type="submit">Submit for Approval</button></p>
+          <p class="form-note" id="reportNote" aria-live="polite"></p>
+        </form>
+      </div>
+      <div class="card" style="max-width:620px">
+        <h2>Your reports</h2>
+        <div id="reportList"></div>
+      </div>
+    </section>
+
+    <!-- Request event -->
+    <section id="tab-request" class="hidden">
+      <h1>Request an event</h1>
+      <p class="sub">Know a place that needs musicians or volunteers? Propose it — officers turn approved requests into sign-up events.</p>
+      <div class="card" style="max-width:620px">
+        <form id="requestForm">
+          <label for="qTitle">Event idea</label>
+          <input id="qTitle" required placeholder="e.g. Caroling at Winchester Hospital">
+          <div class="grid2">
+            <div><label for="qDate">Proposed date</label><input id="qDate" type="date" required value="2026-07-18"></div>
+            <div><label for="qWhere">Location</label><input id="qWhere" required placeholder="Where?"></div>
+          </div>
+          <p style="margin-top:1rem"><button class="btn btn-primary" type="submit">Send Request</button></p>
+          <p class="form-note" id="requestNote" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ OFFICER VIEW ============ -->
+<div id="officerView" class="officer hidden">
+  <aside class="sidebar">
+    <div class="brand"><span class="star">★</span> Officer Panel</div>
+    <button data-otab="members" class="on">Dashboard</button>
+    <button data-otab="approvals">Hour reports <span id="approvalCount"></span></button>
+    <button data-otab="oreq">Event requests</button>
+    <div class="foot">Chapter Officer<br>Aberjona Tri-M · Chapter 2214</div>
+  </aside>
+
+  <main class="omain">
+    <section id="otab-members">
+      <h1>Member progress</h1>
+      <p class="sub" id="memberSummary"></p>
+      <div class="tbl-card">
+        <table>
+          <thead><tr><th>Member</th><th>Progress</th><th class="num">Earned</th><th class="num">Remaining</th></tr></thead>
+          <tbody id="memberRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="otab-approvals" class="hidden">
+      <h1>Hour reports</h1>
+      <p class="sub">Approve or reject member-submitted hours. Approved hours count immediately.</p>
+      <div class="card"><div id="approvalList"></div></div>
+    </section>
+
+    <section id="otab-oreq" class="hidden">
+      <h1>Event requests</h1>
+      <p class="sub">Member ideas for new volunteer events.</p>
+      <div class="card"><div id="oreqList"></div></div>
+    </section>
+  </main>
+</div>
+
+<footer>Interactive demo with example data · <a href="../">Tri-M Hours Log documentation</a> · Made by Neel Bansal</footer>
+
+<script>
+// ---------- example data ----------
+const state = {
+  goal: 10,
+  members: [
+    { name: 'Avery Chen',    email: 'avery@demo.local',  earned: 6.5 },
+    { name: 'Jordan Ellis',  email: 'jordan@demo.local', earned: 10  },
+    { name: 'Priya Raman',   email: 'priya@demo.local',  earned: 8   },
+    { name: 'Marcus Webb',   email: 'marcus@demo.local', earned: 3.5 },
+    { name: 'Sofia Grant',   email: 'sofia@demo.local',  earned: 1   },
+  ],
+  events: [
+    { id: 1, title: 'Spring Concert Volunteering', where: 'School Auditorium',
+      desc: 'Ushering, setup, and teardown for the spring concert.',
+      slots: [
+        { id: 11, when: 'Sun, Jul 12, 2026 · 09:00–11:00', hrs: 2, cap: 4, filled: 1, mine: true },
+        { id: 12, when: 'Sun, Jul 12, 2026 · 17:00–19:00', hrs: 2, cap: 4, filled: 0, mine: false },
+      ]},
+    { id: 2, title: 'Library Summer Reading Kickoff', where: 'Winchester Public Library',
+      desc: 'Background music and craft-table help for the kids’ reading program.',
+      slots: [
+        { id: 21, when: 'Tue, Jul 14, 2026 · 10:00–12:30', hrs: 2.5, cap: 3, filled: 2, mine: false },
+      ]},
+    { id: 3, title: 'Senior Center Recital', where: 'Jenks Center',
+      desc: 'Short solo or duet performances for residents. Bring your own music.',
+      slots: [
+        { id: 31, when: 'Sat, Jul 25, 2026 · 14:00–15:30', hrs: 1.5, cap: 6, filled: 4, mine: false },
+      ]},
+  ],
+  reports: [
+    { id: 1, who: 'Avery Chen', desc: 'Played piano at the senior center open house', date: 'Thu, Jun 4, 2026', hrs: 2, status: 'pending' },
+    { id: 2, who: 'Marcus Webb', desc: 'Helped set up chairs for chorus concert', date: 'Fri, Jun 12, 2026', hrs: 1, status: 'pending' },
+  ],
+  requests: [
+    { id: 1, title: 'Caroling at Winchester Hospital', date: 'Fri, Dec 18, 2026', status: 'pending' },
+  ],
+  nextId: 100,
+};
+const ME = state.members[0];
+
+// ---------- helpers ----------
+const $ = s => document.querySelector(s);
+const fmt = n => (Math.round(n * 10) / 10).toString();
+function fmtDate(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+}
+
+// ---------- member renders ----------
+function renderDash(){
+  const pending = state.reports.filter(r => r.who === ME.name && r.status === 'pending');
+  $('#earnedNum').textContent = fmt(ME.earned);
+  const left = Math.max(0, state.goal - ME.earned);
+  $('#togo').textContent = left ? `${fmt(left)} to go` : '🎉 Requirement met!';
+  const f = $('#meterFill');
+  f.style.width = Math.min(100, ME.earned / state.goal * 100) + '%';
+  f.classList.toggle('done', ME.earned >= state.goal);
+  $('#pendingNote').textContent = pending.length
+    ? `${pending.length} hour report${pending.length>1?'s':''} awaiting officer approval (${fmt(pending.reduce((s,r)=>s+r.hrs,0))} hrs)`
+    : 'No reports awaiting approval.';
+
+  const mine = state.events.flatMap(e => e.slots.filter(s => s.mine).map(s => ({ e, s })));
+  $('#upcomingList').innerHTML = mine.length ? mine.map(({e,s}) => `
+    <div class="item">
+      <div><div class="t">${e.title}</div><div class="d">${s.when} · ${e.where}</div></div>
+      <span class="pill" style="background:#EEF2FF;color:#3730A3">${s.hrs} hrs</span>
+    </div>`).join('') : '<p class="hint">You haven’t signed up for any timeslots yet — check the Events tab.</p>';
+
+  $('#requestList').innerHTML = state.requests.length ? state.requests.map(r => `
+    <div class="item">
+      <div><div class="t">${r.title}</div><div class="d">${r.date}</div></div>
+      <div style="display:flex;gap:.7rem;align-items:center">
+        <span class="pill ${r.status}">${r.status[0].toUpperCase()+r.status.slice(1)}</span>
+        ${r.status === 'pending' ? `<button class="link-red" data-cancel="${r.id}">Cancel</button>` : ''}
+      </div>
+    </div>`).join('') : '<p class="hint">No event requests yet.</p>';
+}
+
+function renderEvents(){
+  $('#eventCards').innerHTML = state.events.map(e => `
+    <div class="card">
+      <h2 style="margin-bottom:.15rem">${e.title}</h2>
+      <p class="hint" style="margin-bottom:.3rem">${e.where}</p>
+      <p style="font-size:.95rem;margin-bottom:.4rem">${e.desc}</p>
+      ${e.slots.map(s => `
+        <div class="item">
+          <div><div class="t" style="font-weight:600">${s.when}</div>
+          <div class="d">${s.hrs} hrs · ${s.filled}/${s.cap} filled${s.mine ? ' · you’re in' : ''}</div></div>
+          ${s.mine
+            ? `<button class="btn btn-ghost" data-slot="${s.id}">Withdraw</button>`
+            : s.filled >= s.cap
+              ? `<span class="pill" style="background:#F1F5F9;color:#64748B">Full</span>`
+              : `<button class="btn btn-primary" data-slot="${s.id}">Sign up</button>`}
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function renderReports(){
+  const mine = state.reports.filter(r => r.who === ME.name);
+  $('#reportList').innerHTML = mine.length ? mine.map(r => `
+    <div class="item">
+      <div><div class="t">${r.desc}</div><div class="d">${r.date} · ${fmt(r.hrs)} hrs</div></div>
+      <span class="pill ${r.status}">${r.status[0].toUpperCase()+r.status.slice(1)}</span>
+    </div>`).join('') : '<p class="hint">No reports yet.</p>';
+}
+
+// ---------- officer renders ----------
+function renderOfficer(){
+  const done = state.members.filter(m => m.earned >= state.goal).length;
+  $('#memberSummary').textContent =
+    `${state.members.length} members · ${state.members.length - done} still working toward ${state.goal} hrs`;
+  $('#memberRows').innerHTML = state.members.map(m => `
+    <tr>
+      <td><div style="font-weight:600">${m.name}</div><div class="hint">${m.email}</div></td>
+      <td><div class="mini-meter"><i class="${m.earned>=state.goal?'done':''}" style="width:${Math.min(100, m.earned/state.goal*100)}%"></i></div></td>
+      <td class="num" style="font-weight:700">${fmt(m.earned)}</td>
+      <td class="num">${fmt(Math.max(0, state.goal - m.earned))}</td>
+    </tr>`).join('');
+
+  const pend = state.reports.filter(r => r.status === 'pending');
+  $('#approvalCount').textContent = pend.length ? `(${pend.length})` : '';
+  $('#approvalList').innerHTML = pend.length ? pend.map(r => `
+    <div class="item">
+      <div><div class="t">${r.desc}</div><div class="d">${r.who} · ${r.date} · ${fmt(r.hrs)} hrs</div></div>
+      <div style="display:flex;gap:.6rem">
+        <button class="btn btn-primary" data-approve="${r.id}">Approve</button>
+        <button class="btn btn-ghost" data-reject="${r.id}">Reject</button>
+      </div>
+    </div>`).join('') : '<p class="hint">No reports waiting — you’re all caught up. ✔</p>';
+
+  $('#oreqList').innerHTML = state.requests.length ? state.requests.map(r => `
+    <div class="item">
+      <div><div class="t">${r.title}</div><div class="d">Requested by Avery Chen · ${r.date}</div></div>
+      <span class="pill ${r.status}">${r.status[0].toUpperCase()+r.status.slice(1)}</span>
+    </div>`).join('') : '<p class="hint">No event requests.</p>';
+}
+
+function renderAll(){ renderDash(); renderEvents(); renderReports(); renderOfficer(); }
+
+// ---------- interactions ----------
+document.querySelectorAll('.topnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.topnav button').forEach(x => x.classList.toggle('on', x === b));
+  ['dash','events','report','request'].forEach(t => $('#tab-'+t).classList.toggle('hidden', t !== b.dataset.tab));
+}));
+
+document.querySelectorAll('.sidebar button[data-otab]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.sidebar button[data-otab]').forEach(x => x.classList.toggle('on', x === b));
+  ['members','approvals','oreq'].forEach(t => $('#otab-'+t).classList.toggle('hidden', t !== b.dataset.otab));
+}));
+
+$('#roleBtn').addEventListener('click', () => {
+  const showOfficer = $('#officerView').classList.contains('hidden');
+  $('#officerView').classList.toggle('hidden', !showOfficer);
+  $('#memberView').classList.toggle('hidden', showOfficer);
+  $('#roleBtn').textContent = showOfficer ? 'Switch to member view' : 'Switch to officer view';
+});
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t.dataset.slot){
+    for (const ev of state.events) for (const s of ev.slots){
+      if (s.id == t.dataset.slot){
+        if (s.mine){ s.mine = false; s.filled--; } else { s.mine = true; s.filled++; }
+      }
+    }
+    renderAll();
+  }
+  if (t.dataset.cancel){
+    state.requests = state.requests.filter(r => r.id != t.dataset.cancel);
+    renderAll();
+  }
+  if (t.dataset.approve){
+    const r = state.reports.find(r => r.id == t.dataset.approve);
+    r.status = 'approved';
+    const m = state.members.find(m => m.name === r.who);
+    if (m) m.earned += r.hrs;
+    renderAll();
+  }
+  if (t.dataset.reject){
+    const r = state.reports.find(r => r.id == t.dataset.reject);
+    r.status = 'rejected';
+    renderAll();
+  }
+});
+
+$('#reportForm').addEventListener('submit', e => {
+  e.preventDefault();
+  state.reports.push({
+    id: state.nextId++, who: ME.name,
+    desc: $('#rDesc').value.trim(),
+    date: fmtDate($('#rDate').value),
+    hrs: parseFloat($('#rHours').value),
+    status: 'pending',
+  });
+  $('#reportNote').textContent = 'Submitted! An officer will review it — watch the Pending badge (or approve it yourself in the officer view).';
+  e.target.reset(); $('#rDate').value = '2026-06-28';
+  renderAll();
+});
+
+$('#requestForm').addEventListener('submit', e => {
+  e.preventDefault();
+  state.requests.push({
+    id: state.nextId++,
+    title: $('#qTitle').value.trim(),
+    date: fmtDate($('#qDate').value),
+    status: 'pending',
+  });
+  $('#requestNote').textContent = 'Request sent! It now shows on your dashboard and in the officer panel.';
+  e.target.reset(); $('#qDate').value = '2026-07-18';
+  renderAll();
+});
+
+renderAll();
+</script>
+</body>
+</html>
