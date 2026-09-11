@@ -1,5 +1,4 @@
 import { getEnv } from "@/lib/env";
-import { ALLOWED_SIGNUP_EMAIL_DOMAIN } from "@/lib/constants";
 
 export interface EmailContent {
   subject: string;
@@ -101,10 +100,10 @@ export function inviteEmail(
     subject: subject(`You're invited to ${chapterName}`),
     html: layout(
       `You've been invited`,
-      `<p><strong>${inviterName}</strong> invited you to create an account for <strong>${chapterName}</strong>. Use the link below to get started and sign up with your <strong>@${ALLOWED_SIGNUP_EMAIL_DOMAIN}</strong> school email. The invite expires on ${expiresAt.toLocaleDateString()}.</p>`,
+      `<p><strong>${inviterName}</strong> invited you to create an account for <strong>${chapterName}</strong>. Use the link below to get started. The invite expires on ${expiresAt.toLocaleDateString()}.</p>`,
       { label: "Create Your Account", url: link },
     ),
-    text: `${inviterName} invited you to create an account for ${chapterName}. Sign up with your @${ALLOWED_SIGNUP_EMAIL_DOMAIN} school email.\n\nCreate your account (expires ${expiresAt.toLocaleDateString()}):\n${link}`,
+    text: `${inviterName} invited you to create an account for ${chapterName}.\n\nCreate your account (expires ${expiresAt.toLocaleDateString()}):\n${link}`,
   };
 }
 

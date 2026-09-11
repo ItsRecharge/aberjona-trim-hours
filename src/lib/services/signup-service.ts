@@ -25,11 +25,6 @@ export async function signupWithInvite(params: {
   graduationYear?: number;
   rawInviteToken: string;
 }): Promise<SignupResult> {
-  // Checked here as well as in the zod schema so the rule holds for any caller.
-  if (!isAllowedSignupEmail(params.email)) {
-    return { ok: false, reason: "email_domain" };
-  }
-
   const passwordHash = await hashPassword(params.password);
   const inviteHash = hashToken(params.rawInviteToken);
 
@@ -42,6 +37,10 @@ export async function signupWithInvite(params: {
       }
       if (invite.maxUses !== null && invite.useCount >= invite.maxUses) {
         return { ok: false, reason: "invite_exhausted" } as const;
+      }
+      // Members must sign up with a school email; officer invites are not restricted.
+      if (invite.role === "member" && !isAllowedSignupEmail(params.email)) {
+        return { ok: false, reason: "email_domain" } as const;
       }
 
       const user = await tx.user.create({

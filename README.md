@@ -18,9 +18,9 @@ and manage the roster. Rewritten from the original Flask demo as a multi-user
 ## Features
 
 - Email + password auth with **invite-only signup** (officers generate links with
-  expiry and optional max-uses) **restricted to `@wpsstudent.com` addresses**
-  (`ALLOWED_SIGNUP_EMAIL_DOMAIN` in `src/lib/constants.ts`), **email verification**
-  required before first login,
+  expiry and optional max-uses; **member invites require a `@wpsstudent.com`
+  email**, set by `ALLOWED_SIGNUP_EMAIL_DOMAIN` in `src/lib/constants.ts`),
+  **email verification** required before first login,
   and **password reset** — all over email.
 - Role-based access (member vs officer) enforced in middleware and re-checked in
   every server action against the database.

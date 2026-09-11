@@ -25,9 +25,8 @@ export type SignupStatus = (typeof SIGNUP_STATUSES)[number];
 export const REPORT_STATUSES = ["pending", "approved", "denied"] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
-// Self-service signup (the invite link form) only accepts school accounts. Login,
-// password reset, email change, and bootstrap admin edits are NOT restricted, so
-// accounts that already exist on other domains keep working.
+// Member signups (invites with role "member") must use a school email. Officer
+// invites, login, password reset, email change, and admin edits are not restricted.
 export const ALLOWED_SIGNUP_EMAIL_DOMAIN = "wpsstudent.com";
 
 /** True when the address is on the allowed signup domain (exact match, no subdomains). */

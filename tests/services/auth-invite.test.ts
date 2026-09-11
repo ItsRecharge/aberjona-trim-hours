@@ -145,7 +145,7 @@ describe("signupWithInvite", () => {
     expect(invite?.useCount).toBe(0);
   });
 
-  it("applies the school-domain rule to officer invites too", async () => {
+  it("lets officer invites sign up with any email domain", async () => {
     const officer = await makeOfficer();
     const { rawToken } = await createInvite({
       createdById: officer.id,
@@ -153,13 +153,32 @@ describe("signupWithInvite", () => {
       expiresInDays: 7,
     });
     const result = await signupWithInvite({
-      firstName: "Out",
-      lastName: "Sider",
-      email: "outsider@gmail.com",
+      firstName: "Ad",
+      lastName: "Visor",
+      email: "advisor@gmail.com",
       password: "password123",
       rawInviteToken: rawToken,
     });
-    expect(result).toEqual({ ok: false, reason: "email_domain" });
+    expect(result.ok).toBe(true);
+    const user = await db.user.findUnique({ where: { email: "advisor@gmail.com" } });
+    expect(user?.role).toBe("officer");
+  });
+
+  it("accepts a member signup on the school domain regardless of case", async () => {
+    const officer = await makeOfficer();
+    const { rawToken } = await createInvite({
+      createdById: officer.id,
+      role: "member",
+      expiresInDays: 7,
+    });
+    const result = await signupWithInvite({
+      firstName: "Cased",
+      lastName: "Student",
+      email: "Cased@WPSStudent.com",
+      password: "password123",
+      rawInviteToken: rawToken,
+    });
+    expect(result.ok).toBe(true);
   });
 });
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ALLOWED_SIGNUP_EMAIL_DOMAIN, ROLES, isAllowedSignupEmail } from "./constants";
+import { ROLES } from "./constants";
 
 export const emailSchema = z
   .string()
@@ -7,11 +7,6 @@ export const emailSchema = z
   .toLowerCase()
   .email("Enter a valid email address")
   .max(254);
-
-/** Signup only: must be a school address. Other flows keep the plain emailSchema. */
-export const signupEmailSchema = emailSchema.refine(isAllowedSignupEmail, {
-  message: `Sign up with your @${ALLOWED_SIGNUP_EMAIL_DOMAIN} school email`,
-});
 
 export const passwordSchema = z
   .string()
@@ -26,7 +21,7 @@ const graduationYearSchema = z
 export const signupSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(50),
   lastName: z.string().trim().max(50).default(""),
-  email: signupEmailSchema,
+  email: emailSchema,
   password: passwordSchema,
   graduationYear: graduationYearSchema,
   inviteToken: z.string().min(1, "Invite token is missing"),

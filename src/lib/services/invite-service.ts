@@ -3,11 +3,9 @@ import { db } from "../db";
 import { generateToken, hashToken } from "../tokens";
 import type { Role } from "../constants";
 
-export interface InviteValidation {
-  valid: boolean;
-  reason?: "not_found" | "revoked" | "expired" | "exhausted";
-  invite?: InviteToken;
-}
+export type InviteValidation =
+  | { valid: true; invite: InviteToken; reason?: undefined }
+  | { valid: false; reason: "not_found" | "revoked" | "expired" | "exhausted"; invite?: undefined };
 
 export async function createInvite(params: {
   createdById: number;

@@ -6,7 +6,14 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { fieldClass, labelClass } from "@/components/AuthShell";
 import { ALLOWED_SIGNUP_EMAIL_DOMAIN } from "@/lib/constants";
 
-export function SignupForm({ inviteToken }: { inviteToken: string }) {
+export function SignupForm({
+  inviteToken,
+  memberInvite,
+}: {
+  inviteToken: string;
+  /** Member invites must use a school email; officer invites may use any address. */
+  memberInvite: boolean;
+}) {
   const [state, formAction] = useActionState<SignupFormState, FormData>(signupAction, {});
 
   return (
@@ -41,12 +48,14 @@ export function SignupForm({ inviteToken }: { inviteToken: string }) {
           name="email"
           type="email"
           required
-          placeholder={`you@${ALLOWED_SIGNUP_EMAIL_DOMAIN}`}
+          placeholder={memberInvite ? `you@${ALLOWED_SIGNUP_EMAIL_DOMAIN}` : undefined}
           className={fieldClass}
         />
-        <p className="mt-1 text-xs text-gray-500">
-          Use your school email ending in @{ALLOWED_SIGNUP_EMAIL_DOMAIN}.
-        </p>
+        {memberInvite && (
+          <p className="mt-1 text-xs text-gray-500">
+            Use your school email ending in @{ALLOWED_SIGNUP_EMAIL_DOMAIN}.
+          </p>
+        )}
       </div>
       <div>
         <label htmlFor="graduationYear" className={labelClass}>
