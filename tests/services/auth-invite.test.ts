@@ -10,7 +10,7 @@ async function makeOfficer() {
     data: {
       firstName: "O",
       lastName: "Fficer",
-      email: "officer@test.local",
+      email: "officer@wpsstudent.com",
       passwordHash: await hashPassword("password123"),
       role: "officer",
       emailVerifiedAt: new Date(),
@@ -57,7 +57,7 @@ describe("signupWithInvite", () => {
     const result = await signupWithInvite({
       firstName: "New",
       lastName: "Member",
-      email: "new@test.local",
+      email: "new@wpsstudent.com",
       password: "password123",
       rawInviteToken: rawToken,
     });
@@ -70,7 +70,7 @@ describe("signupWithInvite", () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].type).toBe("email_verification");
 
-    const user = await db.user.findUnique({ where: { email: "new@test.local" } });
+    const user = await db.user.findUnique({ where: { email: "new@wpsstudent.com" } });
     expect(user?.emailVerifiedAt).toBeNull();
     expect(user?.role).toBe("member");
   });
@@ -86,7 +86,7 @@ describe("signupWithInvite", () => {
     await signupWithInvite({
       firstName: "A",
       lastName: "A",
-      email: "a@test.local",
+      email: "a@wpsstudent.com",
       password: "password123",
       rawInviteToken: rawToken,
     });
@@ -97,7 +97,7 @@ describe("signupWithInvite", () => {
     const second = await signupWithInvite({
       firstName: "B",
       lastName: "B",
-      email: "b@test.local",
+      email: "b@wpsstudent.com",
       password: "password123",
       rawInviteToken: rawToken,
     });
@@ -114,11 +114,52 @@ describe("signupWithInvite", () => {
     const dup = await signupWithInvite({
       firstName: "Dup",
       lastName: "Licate",
-      email: "officer@test.local",
+      email: "officer@wpsstudent.com",
       password: "password123",
       rawInviteToken: rawToken,
     });
     expect(dup).toEqual({ ok: false, reason: "email_taken" });
+  });
+
+  it("rejects an email outside the school domain without consuming the invite", async () => {
+    const officer = await makeOfficer();
+    const { rawToken } = await createInvite({
+      createdById: officer.id,
+      role: "member",
+      expiresInDays: 7,
+      maxUses: 1,
+    });
+    const result = await signupWithInvite({
+      firstName: "Out",
+      lastName: "Sider",
+      email: "outsider@gmail.com",
+      password: "password123",
+      rawInviteToken: rawToken,
+    });
+    expect(result).toEqual({ ok: false, reason: "email_domain" });
+
+    // Nothing was created and the single-use invite is still available.
+    expect(await db.user.count({ where: { email: "outsider@gmail.com" } })).toBe(0);
+    expect(await db.authToken.count()).toBe(0);
+    const invite = await db.inviteToken.findFirst();
+    expect(invite?.useCount).toBe(0);
+  });
+
+  it("applies the school-domain rule to officer invites too", async () => {
+    const officer = await makeOfficer();
+    const { rawToken } = await createInvite({
+      createdById: officer.id,
+      role: "officer",
+      expiresInDays: 7,
+    });
+    const result = await signupWithInvite({
+      firstName: "Out",
+      lastName: "Sider",
+      email: "outsider@gmail.com",
+      password: "password123",
+      rawInviteToken: rawToken,
+    });
+    expect(result).toEqual({ ok: false, reason: "email_domain" });
   });
 });
 

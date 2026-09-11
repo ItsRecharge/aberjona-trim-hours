@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { signupAction, type SignupFormState } from "@/actions/signup";
 import { SubmitButton } from "@/components/SubmitButton";
 import { fieldClass, labelClass } from "@/components/AuthShell";
+import { ALLOWED_SIGNUP_EMAIL_DOMAIN } from "@/lib/constants";
 
 export function SignupForm({ inviteToken }: { inviteToken: string }) {
   const [state, formAction] = useActionState<SignupFormState, FormData>(signupAction, {});
@@ -35,7 +36,17 @@ export function SignupForm({ inviteToken }: { inviteToken: string }) {
         <label htmlFor="email" className={labelClass}>
           Email
         </label>
-        <input id="email" name="email" type="email" required className={fieldClass} />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          placeholder={`you@${ALLOWED_SIGNUP_EMAIL_DOMAIN}`}
+          className={fieldClass}
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Use your school email ending in @{ALLOWED_SIGNUP_EMAIL_DOMAIN}.
+        </p>
       </div>
       <div>
         <label htmlFor="graduationYear" className={labelClass}>

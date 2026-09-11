@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { signupSchema } from "@/lib/validation";
+import { ALLOWED_SIGNUP_EMAIL_DOMAIN } from "@/lib/constants";
 import { signupWithInvite } from "@/lib/services/signup-service";
 import { consumeAuthToken, issueAuthToken } from "@/lib/services/token-service";
 import { sendMail } from "@/lib/email/mailer";
@@ -54,6 +55,8 @@ export async function signupAction(
         return { error: "An account with that email already exists. Try logging in." };
       case "invite_exhausted":
         return { error: "This invite link has reached its usage limit." };
+      case "email_domain":
+        return { error: `Sign up with your @${ALLOWED_SIGNUP_EMAIL_DOMAIN} school email.` };
       default:
         return { error: "This invite link is invalid or has expired." };
     }

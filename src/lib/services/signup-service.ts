@@ -3,13 +3,13 @@ import { db } from "../db";
 import { hashToken } from "../tokens";
 import { hashPassword } from "./auth-service";
 import { issueAuthToken } from "./token-service";
-import type { Role } from "../constants";
+import { isAllowedSignupEmail, type Role } from "../constants";
 
 export type SignupResult =
   | { ok: true; userId: number; email: string; firstName: string; verificationToken: string }
   | {
       ok: false;
-      reason: "invalid_invite" | "invite_exhausted" | "email_taken";
+      reason: "invalid_invite" | "invite_exhausted" | "email_taken" | "email_domain";
     };
 
 /**
@@ -25,6 +25,11 @@ export async function signupWithInvite(params: {
   graduationYear?: number;
   rawInviteToken: string;
 }): Promise<SignupResult> {
+  // Checked here as well as in the zod schema so the rule holds for any caller.
+  if (!isAllowedSignupEmail(params.email)) {
+    return { ok: false, reason: "email_domain" };
+  }
+
   const passwordHash = await hashPassword(params.password);
   const inviteHash = hashToken(params.rawInviteToken);
 
