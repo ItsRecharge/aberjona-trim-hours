@@ -25,6 +25,13 @@ export type SignupStatus = (typeof SIGNUP_STATUSES)[number];
 export const REPORT_STATUSES = ["pending", "approved", "denied"] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
+// Disciplinary strikes: reaching this many removes (deactivates) a member.
+export const MAX_STRIKES = 3;
+
+// "link" invites are shared as a URL; "code" invites as a short typed code.
+export const INVITE_KINDS = ["link", "code"] as const;
+export type InviteKind = (typeof INVITE_KINDS)[number];
+
 // Member signups (invites with role "member") must use a school email. Officer
 // invites, login, password reset, email change, and admin edits are not restricted.
 export const ALLOWED_SIGNUP_EMAIL_DOMAIN = "wpsstudent.com";
@@ -39,7 +46,7 @@ export function isAllowedSignupEmail(email: string): boolean {
 export const SESSION_COOKIE = "trim_session";
 export const FLASH_COOKIE = "trim_flash";
 export const OPS_GRANT_COOKIE = "trim_ops_grant";
-// Holds the bootstrap officer's own session token while they impersonate someone,
+// Holds the admin's own session token while they impersonate someone,
 // so "stop impersonating" can restore it.
 export const IMPERSONATOR_COOKIE = "trim_impersonator";
 

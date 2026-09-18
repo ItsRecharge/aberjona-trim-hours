@@ -48,6 +48,17 @@ export const TEST_TEMPLATES: Record<string, TemplateEntry> = {
     fields: [{ name: "name", label: "Name", default: "Alex Member" }],
     build: (v) => t.passwordResetEmail(v.name, SAMPLE_TOKEN),
   },
+  strike: {
+    label: "Disciplinary strike",
+    fields: [
+      { name: "name", label: "Name", default: "Alex Member" },
+      { name: "count", label: "Strike number", default: "2" },
+      { name: "reason", label: "Reason", default: "Missed a required rehearsal" },
+      { name: "removed", label: "Final strike (removed)?", default: "false" },
+    ],
+    build: (v) =>
+      t.strikeIssuedEmail(v.name, num(v.count, 2), 3, v.reason, bool(v.removed)),
+  },
   invite: {
     label: "Chapter invite",
     fields: [],

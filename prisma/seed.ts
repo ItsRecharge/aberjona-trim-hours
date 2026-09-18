@@ -11,14 +11,16 @@ function utcMidnight(daysFromToday: number): Date {
 }
 
 async function main() {
-  const email = process.env.BOOTSTRAP_OFFICER_EMAIL?.trim().toLowerCase();
-  const password = process.env.BOOTSTRAP_OFFICER_PASSWORD;
-  const name = process.env.BOOTSTRAP_OFFICER_NAME?.trim() || "Chapter Officer";
+  // ADMIN_* is the current name; BOOTSTRAP_OFFICER_* still works for older .env files.
+  const email = (process.env.ADMIN_EMAIL ?? process.env.BOOTSTRAP_OFFICER_EMAIL)
+    ?.trim()
+    .toLowerCase();
+  const password = process.env.ADMIN_PASSWORD ?? process.env.BOOTSTRAP_OFFICER_PASSWORD;
+  const name =
+    (process.env.ADMIN_NAME ?? process.env.BOOTSTRAP_OFFICER_NAME)?.trim() || "Chapter Admin";
 
   if (!email || !password) {
-    console.log(
-      "Skipping bootstrap officer: set BOOTSTRAP_OFFICER_EMAIL and BOOTSTRAP_OFFICER_PASSWORD in .env",
-    );
+    console.log("Skipping admin account: set ADMIN_EMAIL and ADMIN_PASSWORD in .env");
   } else {
     const [firstName, ...rest] = name.split(/\s+/);
     const officer = await db.user.upsert({
@@ -30,11 +32,11 @@ async function main() {
         email,
         passwordHash: await bcrypt.hash(password, 12),
         role: "officer",
-        isBootstrapOfficer: true,
-        emailVerifiedAt: new Date(), // bootstrap account skips verification
+        isAdmin: true,
+        emailVerifiedAt: new Date(), // admin account skips verification
       },
     });
-    console.log(`Bootstrap officer ready: ${officer.email} (id=${officer.id})`);
+    console.log(`Admin ready: ${officer.email} (id=${officer.id})`);
 
     if (process.env.SEED_DEMO === "true") {
       await seedDemo(officer.id);

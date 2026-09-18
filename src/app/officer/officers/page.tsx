@@ -1,19 +1,14 @@
 import Link from "next/link";
-import { ArrowLeft, Crown, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { requireUser, fullName } from "@/lib/current-user";
 import { listOfficers } from "@/lib/services/roster-service";
-import { transferBootstrapAction } from "@/actions/officers";
 import { ResetLinkReveal } from "@/components/ResetLinkReveal";
 import { OfficerActionsMenu } from "@/components/OfficerActionsMenu";
-import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function OfficersPage() {
   const me = await requireUser("officer");
   const officers = await listOfficers();
-  const meIsBootstrap = me.isBootstrapOfficer;
-  const transferTargets = officers.filter(
-    (o) => !o.isBootstrapOfficer && o.deactivatedAt === null,
-  );
+  const meIsAdmin = me.isAdmin;
 
   return (
     <div className="space-y-6">
@@ -28,60 +23,12 @@ export default async function OfficersPage() {
         <h1 className="mt-2 text-2xl font-bold text-gray-900">Officers</h1>
         <p className="text-sm text-gray-500">
           Everyone with officer access. Reset a password or remove an officer as the
-          roster changes. The bootstrap officer is protected from removal until the
-          role is handed off.
+          roster changes. Admins can grant or revoke admin access from the actions
+          menu; an admin is protected from removal until their access is revoked.
         </p>
       </div>
 
       <ResetLinkReveal />
-
-      {meIsBootstrap && transferTargets.length > 0 ? (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-5">
-          <div className="mb-1 flex items-center gap-2 font-semibold text-gray-900">
-            <Crown className="h-4 w-4 text-indigo-700" />
-            Transfer bootstrap role
-          </div>
-          <p className="mb-4 text-sm text-gray-600">
-            Hand the bootstrap (master admin) role to another officer. They become
-            protected from removal; you no longer will be. Confirm with your password.
-          </p>
-          <form
-            action={transferBootstrapAction}
-            className="flex flex-col gap-3 sm:flex-row sm:items-end"
-          >
-            <div className="flex-1">
-              <label htmlFor="targetId" className="mb-1 block text-xs font-medium text-gray-700">
-                New bootstrap officer
-              </label>
-              <select
-                id="targetId"
-                name="targetId"
-                required
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-              >
-                {transferTargets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {fullName(o)} ({o.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label htmlFor="password" className="mb-1 block text-xs font-medium text-gray-700">
-                Your password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-              />
-            </div>
-            <SubmitButton pendingText="Transferring…">Transfer</SubmitButton>
-          </form>
-        </div>
-      ) : null}
 
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">
         <table className="w-full text-sm">
@@ -95,7 +42,6 @@ export default async function OfficersPage() {
           <tbody className="divide-y divide-gray-50">
             {officers.map((o) => {
               const isSelf = o.id === me.id;
-              const protectedNow = o.isBootstrapOfficer;
               const active = o.deactivatedAt === null;
               return (
                 <tr key={o.id} className="align-top">
@@ -117,15 +63,15 @@ export default async function OfficersPage() {
                           Deactivated
                         </span>
                       )}
-                      {o.isBootstrapOfficer ? (
+                      {o.isAdmin ? (
                         <span className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                          <ShieldCheck className="h-3 w-3" /> Bootstrap
+                          <ShieldCheck className="h-3 w-3" /> Admin
                         </span>
                       ) : null}
                     </div>
-                    {protectedNow ? (
+                    {o.isAdmin ? (
                       <div className="mt-1 text-xs text-gray-400">
-                        Protected — transfer the role to remove
+                        Protected — revoke admin to remove
                       </div>
                     ) : null}
                   </td>
@@ -139,8 +85,8 @@ export default async function OfficersPage() {
                         <OfficerActionsMenu
                           officerId={o.id}
                           active={active}
-                          protectedNow={protectedNow}
-                          meIsBootstrap={meIsBootstrap}
+                          targetIsAdmin={o.isAdmin}
+                          meIsAdmin={meIsAdmin}
                         />
                       )}
                     </div>

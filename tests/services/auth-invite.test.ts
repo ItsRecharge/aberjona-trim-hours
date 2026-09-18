@@ -182,6 +182,71 @@ describe("signupWithInvite", () => {
   });
 });
 
+describe("code and emailed invites", () => {
+  it("creates a code invite that validates by typed code", async () => {
+    const officer = await makeOfficer();
+    const { invite, code } = await createInvite({
+      createdById: officer.id,
+      role: "member",
+      expiresInDays: 7,
+      kind: "code",
+    });
+    expect(code).toMatch(/^[A-Z2-9]{8}$/);
+    expect(invite.code).toBe(code);
+
+    const typed = `${code!.slice(0, 4).toLowerCase()}-${code!.slice(4)}`;
+    const validation = await validateInvite(typed);
+    expect(validation.valid).toBe(true);
+    expect(validation.invite?.id).toBe(invite.id);
+  });
+
+  it("link invites have no code and still validate by token", async () => {
+    const officer = await makeOfficer();
+    const { invite, rawToken, code } = await createInvite({
+      createdById: officer.id,
+      role: "member",
+      expiresInDays: 7,
+    });
+    expect(code).toBeNull();
+    expect(invite.code).toBeNull();
+    expect((await validateInvite(rawToken)).valid).toBe(true);
+  });
+
+  it("signs up with a code and bumps its use count", async () => {
+    const officer = await makeOfficer();
+    const { code } = await createInvite({
+      createdById: officer.id,
+      role: "member",
+      expiresInDays: 7,
+      maxUses: 3,
+      kind: "code",
+    });
+    const result = await signupWithInvite({
+      firstName: "Code",
+      lastName: "User",
+      email: "code@wpsstudent.com",
+      password: "password123",
+      rawInviteToken: `${code!.slice(0, 4)}-${code!.slice(4).toLowerCase()}`,
+    });
+    expect(result.ok).toBe(true);
+    const invite = await db.inviteToken.findFirst();
+    expect(invite?.useCount).toBe(1);
+  });
+
+  it("stores the recipient address on emailed invites", async () => {
+    const officer = await makeOfficer();
+    const { invite } = await createInvite({
+      createdById: officer.id,
+      role: "member",
+      expiresInDays: 7,
+      maxUses: 1,
+      email: "kid@wpsstudent.com",
+    });
+    expect(invite.email).toBe("kid@wpsstudent.com");
+    expect(invite.maxUses).toBe(1);
+  });
+});
+
 describe("verifyCredentials", () => {
   it("blocks login until the email is verified", async () => {
     await db.user.create({

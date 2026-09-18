@@ -37,7 +37,7 @@ and manage the roster. Rewritten from the original Flask demo as a multi-user
 npm install
 cp .env.example .env          # then fill in the values below
 npx prisma migrate dev        # create the SQLite database
-npm run db:seed               # create the bootstrap officer (+ demo data if enabled)
+npm run db:seed               # create the first admin (+ demo data if enabled)
 npm run dev                   # http://localhost:3000
 ```
 
@@ -46,8 +46,8 @@ npm run dev                   # http://localhost:3000
 - `DATABASE_URL` — e.g. `file:../data/app.db`
 - `SESSION_SECRET` — `openssl rand -base64 32`
 - `APP_URL` — base URL used in email links (`http://localhost:3000` for dev)
-- `BOOTSTRAP_OFFICER_EMAIL` / `BOOTSTRAP_OFFICER_PASSWORD` / `BOOTSTRAP_OFFICER_NAME`
-  — the first officer, created pre-verified by the seed script
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` — the first admin officer,
+  created pre-verified by the seed script (older `BOOTSTRAP_OFFICER_*` names still work)
 - `SEED_DEMO=true` — also seeds demo events + a demo member (local only)
 
 ### Email (optional — emails become no-ops if unset)
@@ -68,7 +68,7 @@ broadcasts are sent BCC in chunks to stay within it.
 
 ## First run
 
-1. Log in with the bootstrap officer account.
+1. Log in with the admin account.
 2. Go to **Invites** → create an invite link (and optionally email it).
 3. Open the link to sign up as a member → verify via the emailed link → log in.
 4. Officers create events / approve requests / take attendance; members sign up

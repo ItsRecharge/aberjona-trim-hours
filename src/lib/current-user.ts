@@ -3,6 +3,7 @@ import type { User } from "@prisma/client";
 import { getSessionClaims } from "./session";
 import { validateSession } from "./services/session-service";
 import type { Role } from "./constants";
+import { setFlash } from "./flash";
 
 /**
  * Resolve the logged-in user from the session cookie. Validates the session row
@@ -21,6 +22,16 @@ export async function requireUser(role?: Role): Promise<User> {
   if (!user) redirect("/login");
   if (role && user.role !== role) {
     redirect(user.role === "officer" ? "/officer/dashboard" : "/member/dashboard");
+  }
+  return user;
+}
+
+/** An officer with the admin flag; anyone else is flashed and redirected. */
+export async function requireAdmin(redirectTo: string): Promise<User> {
+  const user = await requireUser("officer");
+  if (!user.isAdmin) {
+    await setFlash("danger", "Only admins can do that.");
+    redirect(redirectTo);
   }
   return user;
 }

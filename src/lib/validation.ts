@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ROLES } from "./constants";
+import { INVITE_KINDS, ROLES } from "./constants";
 
 export const emailSchema = z
   .string()
@@ -113,6 +113,7 @@ export const inviteSchema = z.object({
   expiresInDays: z.coerce.number().int().min(1).max(365),
   maxUses: z.coerce.number().int().positive().max(1000).optional(),
   role: z.enum(ROLES).default("member"),
+  kind: z.enum(INVITE_KINDS).default("link"),
 });
 
 export const chapterSettingsSchema = z.object({
@@ -151,7 +152,7 @@ export const profileSchema = z.object({
   graduationYear: graduationYearSchema,
 });
 
-// Bootstrap god-mode: edit any user's identity fields directly.
+// Admin god-mode: edit any user's identity fields directly.
 export const adminProfileSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(50),
   lastName: z.string().trim().max(50).default(""),

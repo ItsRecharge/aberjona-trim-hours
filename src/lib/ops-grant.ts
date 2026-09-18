@@ -4,7 +4,7 @@ import { OPS_GRANT_TTL_SECONDS } from "./constants";
 export interface OpsGrantClaims {
   userId: number;
   email: string;
-  bootstrap: boolean;
+  admin: boolean;
 }
 
 function secretKey(): Uint8Array {
@@ -16,7 +16,7 @@ function secretKey(): Uint8Array {
 }
 
 export async function signOpsGrant(claims: OpsGrantClaims): Promise<string> {
-  return new SignJWT({ email: claims.email, bootstrap: claims.bootstrap })
+  return new SignJWT({ email: claims.email, admin: claims.admin })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(claims.userId))
     .setIssuedAt()
@@ -29,11 +29,11 @@ export async function verifyOpsGrant(token: string): Promise<OpsGrantClaims | nu
     const { payload } = await jwtVerify(token, secretKey());
     const userId = Number(payload.sub);
     const email = payload.email;
-    const bootstrap = payload.bootstrap;
-    if (!Number.isInteger(userId) || typeof email !== "string" || typeof bootstrap !== "boolean") {
+    const admin = payload.admin;
+    if (!Number.isInteger(userId) || typeof email !== "string" || typeof admin !== "boolean") {
       return null;
     }
-    return { userId, email: email.toLowerCase(), bootstrap };
+    return { userId, email: email.toLowerCase(), admin };
   } catch {
     return null;
   }

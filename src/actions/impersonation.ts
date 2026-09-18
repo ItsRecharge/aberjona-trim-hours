@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { requireUser, fullName } from "@/lib/current-user";
+import { requireAdmin, fullName } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { setFlash } from "@/lib/flash";
@@ -20,17 +20,13 @@ function homeFor(role: string): string {
 }
 
 /**
- * Bootstrap-only: start acting as another user. The admin's own session token is
+ * Admin-only: start acting as another user. The admin's own session token is
  * stashed in a cookie so logging out can restore it; the main session cookie is
  * pointed at a fresh session for the target, so the whole app behaves as the
  * target. To exit, the admin just logs out (see endImpersonationIfActive).
  */
 export async function startImpersonationAction(formData: FormData): Promise<void> {
-  const admin = await requireUser("officer");
-  if (!admin.isBootstrapOfficer) {
-    await setFlash("danger", "Only the bootstrap officer can impersonate users.");
-    redirect(OFFICERS_PATH);
-  }
+  const admin = await requireAdmin(OFFICERS_PATH);
 
   const jar = await cookies();
   if (jar.get(IMPERSONATOR_COOKIE)) {

@@ -54,11 +54,11 @@ export async function signupAction(
       case "email_taken":
         return { error: "An account with that email already exists. Try logging in." };
       case "invite_exhausted":
-        return { error: "This invite link has reached its usage limit." };
+        return { error: "This invite has reached its usage limit." };
       case "email_domain":
         return { error: `Sign up with your @${ALLOWED_SIGNUP_EMAIL_DOMAIN} school email.` };
       default:
-        return { error: "This invite link is invalid or has expired." };
+        return { error: "This invite is invalid or has expired." };
     }
   }
 

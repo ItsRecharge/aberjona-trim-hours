@@ -8,6 +8,8 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cancelRequestAction } from "@/actions/events";
 import { formatEventDate, formatSlot } from "@/lib/format";
+import { listStrikes } from "@/lib/services/strike-service";
+import { MAX_STRIKES } from "@/lib/constants";
 
 export default async function MemberDashboard() {
   const user = await requireUser("member");
@@ -41,6 +43,8 @@ export default async function MemberDashboard() {
     where: { userId: user.id, status: "pending" },
   });
 
+  const strikes = await listStrikes(user.id);
+
   return (
     <div className="space-y-6">
       <div>
@@ -49,6 +53,26 @@ export default async function MemberDashboard() {
           School year {start.getUTCFullYear()}–{end.getUTCFullYear()}
         </p>
       </div>
+
+      {strikes.length > 0 && (
+        <section className="rounded-xl border border-red-300 bg-red-50 p-6 text-red-800">
+          <h2 className="text-lg font-semibold">
+            Disciplinary strikes: {strikes.length} of {MAX_STRIKES}
+          </h2>
+          <p className="mt-1 text-sm">
+            {MAX_STRIKES} strikes result in removal from the chapter. Talk to an
+            officer if you have questions.
+          </p>
+          <ul className="mt-3 divide-y divide-red-200 text-sm">
+            {strikes.map((s) => (
+              <li key={s.id} className="py-2">
+                <span className="font-medium">{s.reason}</span>
+                <span className="text-red-700/80"> · {formatEventDate(s.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <div className="mb-3 flex items-end justify-between">

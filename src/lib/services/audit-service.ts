@@ -35,7 +35,7 @@ export async function listAuditLog(limit = 200) {
   });
 }
 
-/** Deletes every audit log entry. Bootstrap-only; gate at the action layer. */
+/** Deletes every audit log entry. Admin-only; gate at the action layer. */
 export async function clearAuditLog(): Promise<void> {
   await db.auditLog.deleteMany({});
 }

@@ -3,7 +3,7 @@
 import { Trash2 } from "lucide-react";
 import { clearAuditLogAction } from "@/actions/audit";
 
-/** Bootstrap-only button to wipe the audit log, with a confirm guard. */
+/** Admin-only button to wipe the audit log, with a confirm guard. */
 export function ClearAuditLogButton() {
   return (
     <form

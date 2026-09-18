@@ -4,6 +4,7 @@ import { createInviteAction, revokeInviteAction } from "@/actions/invites";
 import { SubmitButton } from "@/components/SubmitButton";
 import { InviteLinkReveal } from "@/components/InviteLinkReveal";
 import { formatEventDate } from "@/lib/format";
+import { formatInviteCode } from "@/lib/invite-code";
 
 const field =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200";
@@ -16,9 +17,10 @@ export default async function OfficerInvitesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Invite links</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Invites</h1>
         <p className="text-sm text-gray-500">
-          Generate links for new members to sign up. Optionally email a link directly.
+          Generate a link or a short code for new members to sign up, or email
+          single-use links directly.
         </p>
       </div>
 
@@ -65,11 +67,30 @@ export default async function OfficerInvitesPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="email" className={label}>
-                Email to (optional)
+              <label htmlFor="kind" className={label}>
+                Invite type
               </label>
-              <input id="email" name="email" type="email" className={field} />
+              <select id="kind" name="kind" className={field}>
+                <option value="link">Link</option>
+                <option value="code">Code (typed at signup)</option>
+              </select>
             </div>
+          </div>
+          <div>
+            <label htmlFor="emails" className={label}>
+              Email to (optional; separate addresses with commas)
+            </label>
+            <textarea
+              id="emails"
+              name="emails"
+              rows={2}
+              placeholder="a@wpsstudent.com, b@wpsstudent.com"
+              className={field}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Each address gets its own single-use link. Invite type and max uses are
+              ignored when emailing.
+            </p>
           </div>
           <SubmitButton pendingText="Creating…">Create Invite</SubmitButton>
         </form>
@@ -85,6 +106,7 @@ export default async function OfficerInvitesPage() {
               <tr>
                 <th className="px-6 py-3">Created by</th>
                 <th className="px-6 py-3">Role</th>
+                <th className="px-6 py-3">Code / sent to</th>
                 <th className="px-6 py-3">Expires</th>
                 <th className="px-6 py-3 text-center">Uses</th>
                 <th className="px-6 py-3 text-right">Action</th>
@@ -95,6 +117,13 @@ export default async function OfficerInvitesPage() {
                 <tr key={inv.id}>
                   <td className="px-6 py-3 text-gray-700">{fullName(inv.createdBy)}</td>
                   <td className="px-6 py-3 text-gray-600 capitalize">{inv.role}</td>
+                  <td className="px-6 py-3 text-gray-600">
+                    {inv.code ? (
+                      <span className="font-mono">{formatInviteCode(inv.code)}</span>
+                    ) : (
+                      (inv.email ?? "—")
+                    )}
+                  </td>
                   <td className="px-6 py-3 text-gray-600">
                     {formatEventDate(inv.expiresAt)}
                   </td>

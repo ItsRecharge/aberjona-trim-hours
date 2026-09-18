@@ -9,9 +9,13 @@ import {
   MoreVertical,
   Pencil,
   Power,
+  ShieldCheck,
+  ShieldOff,
   UserCog,
 } from "lucide-react";
 import {
+  grantAdminAction,
+  revokeAdminAction,
   sendPasswordResetForUserAction,
   setOfficerActiveAction,
 } from "@/actions/officers";
@@ -20,8 +24,9 @@ import { startImpersonationAction } from "@/actions/impersonation";
 interface OfficerActionsMenuProps {
   officerId: number;
   active: boolean;
-  protectedNow: boolean;
-  meIsBootstrap: boolean;
+  /** Whether the officer this menu is for is an admin (protected from deactivation). */
+  targetIsAdmin: boolean;
+  meIsAdmin: boolean;
 }
 
 const itemClass =
@@ -30,8 +35,8 @@ const itemClass =
 export function OfficerActionsMenu({
   officerId,
   active,
-  protectedNow,
-  meIsBootstrap,
+  targetIsAdmin,
+  meIsAdmin,
 }: OfficerActionsMenuProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{
@@ -118,7 +123,7 @@ export function OfficerActionsMenu({
                 bottom: pos.bottom,
               }}
               className="z-50 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-          {meIsBootstrap ? (
+          {meIsAdmin ? (
             <Link
               href={`/officer/members/${officerId}`}
               className={itemClass}
@@ -129,12 +134,31 @@ export function OfficerActionsMenu({
             </Link>
           ) : null}
 
-          {meIsBootstrap && active ? (
+          {meIsAdmin && active ? (
             <form action={startImpersonationAction}>
               <input type="hidden" name="userId" value={officerId} />
               <button type="submit" className={`${itemClass} text-amber-800`}>
                 <UserCog className="h-3.5 w-3.5" />
                 Impersonate
+              </button>
+            </form>
+          ) : null}
+
+          {meIsAdmin && targetIsAdmin ? (
+            <form action={revokeAdminAction}>
+              <input type="hidden" name="userId" value={officerId} />
+              <button type="submit" className={itemClass}>
+                <ShieldOff className="h-3.5 w-3.5" />
+                Revoke admin
+              </button>
+            </form>
+          ) : null}
+          {meIsAdmin && !targetIsAdmin && active ? (
+            <form action={grantAdminAction}>
+              <input type="hidden" name="userId" value={officerId} />
+              <button type="submit" className={`${itemClass} text-indigo-700`}>
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Make admin
               </button>
             </form>
           ) : null}
@@ -165,14 +189,10 @@ export function OfficerActionsMenu({
             <input type="hidden" name="active" value={active ? "false" : "true"} />
             <button
               type="submit"
-              disabled={protectedNow}
-              title={
-                protectedNow
-                  ? "Transfer the bootstrap role before removing this officer."
-                  : undefined
-              }
+              disabled={targetIsAdmin}
+              title={targetIsAdmin ? "Revoke admin before deactivating." : undefined}
               className={
-                protectedNow
+                targetIsAdmin
                   ? "flex w-full cursor-not-allowed items-center gap-2 px-3 py-2 text-left text-sm text-gray-300"
                   : active
                     ? `${itemClass} text-red-700`

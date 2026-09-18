@@ -57,8 +57,8 @@ export async function completeSetupAction(
       email: data.email,
       passwordHash: await hashPassword(data.password),
       role: "officer",
-      isBootstrapOfficer: true,
-      emailVerifiedAt: new Date(), // bootstrap officer skips email verification
+      isAdmin: true,
+      emailVerifiedAt: new Date(), // the first admin skips email verification
     },
   });
 

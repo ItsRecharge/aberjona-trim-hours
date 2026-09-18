@@ -7,14 +7,14 @@ import { hoursEarnedForUser } from "@/lib/services/member-service";
 import { hoursHistoryForUser } from "@/lib/services/history-service";
 import { getYearlyGoal } from "@/lib/services/chapter-service";
 import { hoursRemaining } from "@/lib/hours";
-import { isBootstrapProtected } from "@/lib/services/bootstrap-service";
+import { isAdmin } from "@/lib/services/admin-service";
 import { ProgressBar } from "@/components/ProgressBar";
+import { IssueStrikeForm } from "@/components/IssueStrikeForm";
+import { listStrikes } from "@/lib/services/strike-service";
+import { MAX_STRIKES } from "@/lib/constants";
 import { SubmitButton } from "@/components/SubmitButton";
 import { adjustHoursAction, setActiveAction, setRoleAction } from "@/actions/roster";
-import {
-  bootstrapEditProfileAction,
-  bootstrapSetPasswordAction,
-} from "@/actions/admin-user";
+import { adminEditProfileAction, adminSetPasswordAction } from "@/actions/admin-user";
 import { startImpersonationAction } from "@/actions/impersonation";
 import { formatEventDate } from "@/lib/format";
 
@@ -33,13 +33,14 @@ export default async function MemberDetailPage({
   const member = await db.user.findUnique({ where: { id: memberId } });
   if (!member) notFound();
 
-  const [earned, goal, history] = await Promise.all([
+  const [earned, goal, history, strikes] = await Promise.all([
     hoursEarnedForUser(member.id),
     getYearlyGoal(),
     hoursHistoryForUser(member.id),
+    listStrikes(member.id),
   ]);
   const isSelf = member.id === officer.id;
-  const bootstrapProtected = isBootstrapProtected(member);
+  const adminProtected = isAdmin(member);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -57,7 +58,7 @@ export default async function MemberDetailPage({
           {member.graduationYear ? ` · Class of ${member.graduationYear}` : ""} ·{" "}
           <span className="capitalize">{member.role}</span>
           {member.deactivatedAt ? " · inactive" : ""}
-          {bootstrapProtected ? " · bootstrap admin" : ""}
+          {adminProtected ? " · admin" : ""}
         </p>
       </div>
 
@@ -137,33 +138,78 @@ export default async function MemberDetailPage({
           </ul>
         )}
       </section>
+
+      <section className="rounded-xl bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Strikes</h2>
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              strikes.length >= MAX_STRIKES - 1
+                ? "bg-red-50 text-red-700"
+                : strikes.length > 0
+                  ? "bg-yellow-50 text-yellow-800"
+                  : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            {strikes.length} / {MAX_STRIKES}
+          </span>
+        </div>
+        {strikes.length === 0 ? (
+          <p className="mb-4 text-sm text-gray-500">No strikes.</p>
+        ) : (
+          <ul className="mb-4 divide-y divide-gray-100">
+            {strikes.map((s) => (
+              <li key={s.id} className="py-2.5 text-sm">
+                <p className="font-medium text-gray-900">{s.reason}</p>
+                <p className="text-xs text-gray-500">
+                  {formatEventDate(s.createdAt)} · issued by {fullName(s.issuedBy)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!isSelf && !member.deactivatedAt ? (
+          <IssueStrikeForm
+            userId={member.id}
+            name={fullName(member)}
+            currentCount={strikes.length}
+          />
+        ) : null}
+      </section>
         </>
       )}
 
       {!isSelf && (
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Manage</h2>
-          {bootstrapProtected ? (
+          {adminProtected ? (
             <p className="mb-4 text-sm text-amber-700">
-              This is the bootstrap officer account. Transfer the bootstrap role to
-              another officer before it can be demoted or removed.
+              This is an admin account. Revoke admin access from the Officers page
+              before it can be demoted or removed.
             </p>
           ) : null}
           <div className="flex flex-wrap gap-3">
-            {officer.isBootstrapOfficer ? (
+            {member.role === "member" ? (
               <form action={setRoleAction}>
                 <input type="hidden" name="userId" value={member.id} />
-                <input
-                  type="hidden"
-                  name="role"
-                  value={member.role === "officer" ? "member" : "officer"}
-                />
+                <input type="hidden" name="role" value="officer" />
                 <button
                   type="submit"
-                  disabled={bootstrapProtected}
                   className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
-                  {member.role === "officer" ? "Demote to member" : "Promote to officer"}
+                  Promote to officer
+                </button>
+              </form>
+            ) : officer.isAdmin ? (
+              <form action={setRoleAction}>
+                <input type="hidden" name="userId" value={member.id} />
+                <input type="hidden" name="role" value="member" />
+                <button
+                  type="submit"
+                  disabled={adminProtected}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Demote to member
                 </button>
               </form>
             ) : null}
@@ -176,7 +222,7 @@ export default async function MemberDetailPage({
               />
               <button
                 type="submit"
-                disabled={bootstrapProtected}
+                disabled={adminProtected}
                 className={`rounded-md border px-4 py-2 text-sm font-semibold transition ${
                   member.deactivatedAt
                     ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
@@ -190,9 +236,9 @@ export default async function MemberDetailPage({
         </section>
       )}
 
-      {officer.isBootstrapOfficer && (
+      {officer.isAdmin && (
         <section className="rounded-xl border border-indigo-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Bootstrap admin — edit user</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Admin — edit user</h2>
           <p className="mb-4 text-sm text-gray-500">
             Change this user&apos;s details directly, no links needed. Changing the
             email or password logs them out of all devices.
@@ -211,7 +257,7 @@ export default async function MemberDetailPage({
             </form>
           ) : null}
 
-          <form action={bootstrapEditProfileAction} className="space-y-4">
+          <form action={adminEditProfileAction} className="space-y-4">
             <input type="hidden" name="userId" value={member.id} />
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -244,7 +290,7 @@ export default async function MemberDetailPage({
             <SubmitButton pendingText="Saving…">Save user details</SubmitButton>
           </form>
 
-          <form action={bootstrapSetPasswordAction} className="mt-6 space-y-4 border-t border-gray-100 pt-6">
+          <form action={adminSetPasswordAction} className="mt-6 space-y-4 border-t border-gray-100 pt-6">
             <input type="hidden" name="userId" value={member.id} />
             <div>
               <label htmlFor="password" className={label}>Set new password</label>

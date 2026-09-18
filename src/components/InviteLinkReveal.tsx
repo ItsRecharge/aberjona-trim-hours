@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-/** Reads the one-time invite link cookie, shows it with a copy button, clears it. */
+/** Reads the one-time invite cookie (a link or a code), shows it with a copy button, clears it. */
 export function InviteLinkReveal() {
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -19,17 +19,22 @@ export function InviteLinkReveal() {
   }, []);
 
   if (!link) return null;
+  const isCode = !link.startsWith("http");
 
   return (
     <div className="rounded-xl border border-green-300 bg-green-50 p-4">
       <p className="mb-2 text-sm font-semibold text-green-800">
-        New invite link (copy it now — it won&apos;t be shown again):
+        {isCode
+          ? "New invite code (also listed in the table below):"
+          : "New invite link (copy it now — it won\u2019t be shown again):"}
       </p>
       <div className="flex items-center gap-2">
         <input
           readOnly
           value={link}
-          className="flex-1 rounded-md border border-green-300 bg-white px-3 py-2 font-mono text-xs text-gray-800"
+          className={`flex-1 rounded-md border border-green-300 bg-white px-3 py-2 font-mono text-gray-800 ${
+            isCode ? "text-lg font-semibold tracking-widest" : "text-xs"
+          }`}
         />
         <button
           type="button"

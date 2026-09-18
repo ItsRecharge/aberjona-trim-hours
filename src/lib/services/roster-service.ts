@@ -1,8 +1,8 @@
-import type { HourReport } from "@prisma/client";
+import type { HourReport, User } from "@prisma/client";
 import { db } from "../db";
 import { revokeAllUserSessions } from "./session-service";
 import type { Role } from "../constants";
-import { isBootstrapProtected } from "./bootstrap-service";
+import { isAdmin } from "./admin-service";
 
 export interface OfficerRow {
   id: number;
@@ -10,11 +10,11 @@ export interface OfficerRow {
   lastName: string;
   email: string;
   deactivatedAt: Date | null;
-  isBootstrapOfficer: boolean;
+  isAdmin: boolean;
   createdAt: Date;
 }
 
-/** Every officer account. The bootstrap officer is protected until the role is handed off. */
+/** Every officer account. Admins are protected until admin is revoked. */
 export async function listOfficers(): Promise<OfficerRow[]> {
   return db.user.findMany({
     where: { role: "officer" },
@@ -24,27 +24,27 @@ export async function listOfficers(): Promise<OfficerRow[]> {
       lastName: true,
       email: true,
       deactivatedAt: true,
-      isBootstrapOfficer: true,
+      isAdmin: true,
       createdAt: true,
     },
     orderBy: { firstName: "asc" },
   });
 }
 
-export class BootstrapOfficerProtectionError extends Error {
+export class AdminProtectionError extends Error {
   constructor() {
-    super("The bootstrap officer cannot be changed during the first year.");
-    this.name = "BootstrapOfficerProtectionError";
+    super("Admin accounts can't be demoted or deactivated. Revoke admin first.");
+    this.name = "AdminProtectionError";
   }
 }
 
-async function assertBootstrapOfficerEditable(userId: number): Promise<void> {
+async function assertNotAdmin(userId: number): Promise<void> {
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { createdAt: true, isBootstrapOfficer: true },
+    select: { isAdmin: true },
   });
-  if (user && isBootstrapProtected(user)) {
-    throw new BootstrapOfficerProtectionError();
+  if (user && isAdmin(user)) {
+    throw new AdminProtectionError();
   }
 }
 
@@ -72,9 +72,14 @@ export async function createAdjustment(input: {
   });
 }
 
+/** Any officer may promote a member to officer; only admins may demote. */
+export function canSetRole(actor: Pick<User, "isAdmin">, role: Role): boolean {
+  return role === "officer" || actor.isAdmin;
+}
+
 export async function setMemberRole(userId: number, role: Role): Promise<void> {
   if (role === "member" || role === "officer") {
-    await assertBootstrapOfficerEditable(userId);
+    await assertNotAdmin(userId);
   }
   await db.user.update({ where: { id: userId }, data: { role } });
 }
@@ -82,7 +87,7 @@ export async function setMemberRole(userId: number, role: Role): Promise<void> {
 /** Deactivating a member also revokes their sessions so they're logged out. */
 export async function setMemberActive(userId: number, active: boolean): Promise<void> {
   if (!active) {
-    await assertBootstrapOfficerEditable(userId);
+    await assertNotAdmin(userId);
   }
   await db.user.update({
     where: { id: userId },

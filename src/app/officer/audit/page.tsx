@@ -34,7 +34,7 @@ export default async function AuditLogPage() {
             A record of officer actions, newest first.
           </p>
         </div>
-        {me.isBootstrapOfficer ? <ClearAuditLogButton /> : null}
+        {me.isAdmin ? <ClearAuditLogButton /> : null}
       </div>
 
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">

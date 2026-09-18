@@ -5,7 +5,7 @@ import { isSuperAdmin } from "@/lib/ops-access";
 import { signOpsGrant, verifyOpsGrant } from "@/lib/ops-grant";
 import { truncateAll } from "../helpers/db";
 
-async function makeBootstrapOfficer(createdAt = new Date()) {
+async function makeAdmin(createdAt = new Date()) {
   return db.user.create({
     data: {
       firstName: "B",
@@ -13,7 +13,7 @@ async function makeBootstrapOfficer(createdAt = new Date()) {
       email: "boot@test.local",
       passwordHash: await hashPassword("password123"),
       role: "officer",
-      isBootstrapOfficer: true,
+      isAdmin: true,
       createdAt,
       emailVerifiedAt: new Date(),
     },
@@ -23,26 +23,26 @@ async function makeBootstrapOfficer(createdAt = new Date()) {
 beforeEach(() => truncateAll(db));
 
 describe("ops access", () => {
-  it("treats the protected bootstrap officer as a super admin", async () => {
+  it("treats an admin as a super admin", async () => {
     const createdAt = new Date();
     createdAt.setUTCMonth(createdAt.getUTCMonth() - 2);
-    const bootstrap = await makeBootstrapOfficer(createdAt);
+    const admin = await makeAdmin(createdAt);
 
-    expect(isSuperAdmin(bootstrap)).toBe(true);
+    expect(isSuperAdmin(admin)).toBe(true);
   });
 
   it("signs and verifies an ops grant token", async () => {
-    const bootstrap = await makeBootstrapOfficer();
+    const admin = await makeAdmin();
     const token = await signOpsGrant({
-      userId: bootstrap.id,
-      email: bootstrap.email,
-      bootstrap: bootstrap.isBootstrapOfficer,
+      userId: admin.id,
+      email: admin.email,
+      admin: admin.isAdmin,
     });
 
     expect(await verifyOpsGrant(token)).toEqual({
-      userId: bootstrap.id,
-      email: bootstrap.email,
-      bootstrap: true,
+      userId: admin.id,
+      email: admin.email,
+      admin: true,
     });
   });
 });

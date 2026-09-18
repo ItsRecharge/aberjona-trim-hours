@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { truncateAll } from "../helpers/db";
 import { hashPassword, verifyCredentials } from "@/lib/services/auth-service";
 import {
-  BootstrapOfficerProtectionError,
+  AdminProtectionError,
+  canSetRole,
   createAdjustment,
   setMemberActive,
   setMemberRole,
@@ -28,12 +29,12 @@ async function makeOfficer() {
       email: "o@test.local",
       passwordHash: await hashPassword("password123"),
       role: "officer",
-      isBootstrapOfficer: false,
+      isAdmin: false,
       emailVerifiedAt: new Date(),
     },
   });
 }
-async function makeBootstrapOfficer(createdAt = new Date()) {
+async function makeAdmin(createdAt = new Date()) {
   return db.user.create({
     data: {
       firstName: "B",
@@ -41,7 +42,7 @@ async function makeBootstrapOfficer(createdAt = new Date()) {
       email: "bo@test.local",
       passwordHash: await hashPassword("password123"),
       role: "officer",
-      isBootstrapOfficer: true,
+      isAdmin: true,
       createdAt,
       emailVerifiedAt: new Date(),
     },
@@ -55,7 +56,7 @@ async function makeMember(email = "m@test.local") {
       email,
       passwordHash: await hashPassword("password123"),
       role: "member",
-      isBootstrapOfficer: false,
+      isAdmin: false,
       emailVerifiedAt: new Date(),
     },
   });
@@ -121,33 +122,42 @@ describe("roster management", () => {
     expect(updated?.role).toBe("officer");
   });
 
-  it("protects the bootstrap officer while they hold the role", async () => {
-    const bootstrap = await makeBootstrapOfficer();
+  it("lets any officer promote but only admins demote", () => {
+    const officer = { isAdmin: false };
+    const admin = { isAdmin: true };
+    expect(canSetRole(officer, "officer")).toBe(true);
+    expect(canSetRole(officer, "member")).toBe(false);
+    expect(canSetRole(admin, "officer")).toBe(true);
+    expect(canSetRole(admin, "member")).toBe(true);
+  });
 
-    await expect(setMemberRole(bootstrap.id, "member")).rejects.toBeInstanceOf(
-      BootstrapOfficerProtectionError,
+  it("protects admins from demotion and deactivation", async () => {
+    const admin = await makeAdmin();
+
+    await expect(setMemberRole(admin.id, "member")).rejects.toBeInstanceOf(
+      AdminProtectionError,
     );
-    await expect(setMemberActive(bootstrap.id, false)).rejects.toBeInstanceOf(
-      BootstrapOfficerProtectionError,
+    await expect(setMemberActive(admin.id, false)).rejects.toBeInstanceOf(
+      AdminProtectionError,
     );
 
-    const unchanged = await db.user.findUnique({ where: { id: bootstrap.id } });
+    const unchanged = await db.user.findUnique({ where: { id: admin.id } });
     expect(unchanged?.role).toBe("officer");
     expect(unchanged?.deactivatedAt).toBeNull();
   });
 
-  it("allows changes once the bootstrap role is handed off", async () => {
-    const bootstrap = await makeBootstrapOfficer();
-    // Handoff (what transferBootstrapAction does) clears the flag and ends protection.
+  it("allows changes once admin is revoked", async () => {
+    const admin = await makeAdmin();
+    // Revoking admin (what revokeAdminAction does) ends protection.
     await db.user.update({
-      where: { id: bootstrap.id },
-      data: { isBootstrapOfficer: false },
+      where: { id: admin.id },
+      data: { isAdmin: false },
     });
 
-    await setMemberRole(bootstrap.id, "member");
-    await setMemberActive(bootstrap.id, false);
+    await setMemberRole(admin.id, "member");
+    await setMemberActive(admin.id, false);
 
-    const updated = await db.user.findUnique({ where: { id: bootstrap.id } });
+    const updated = await db.user.findUnique({ where: { id: admin.id } });
     expect(updated?.role).toBe("member");
     expect(updated?.deactivatedAt).not.toBeNull();
   });

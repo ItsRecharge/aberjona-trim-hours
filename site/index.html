@@ -282,11 +282,11 @@ cp .env.example .env</code></pre>
       </div>
       <div class="step">
         <h3>Fill in the required environment values</h3>
-        <p>Open <code>.env</code> and set: <code>DATABASE_URL</code> (e.g. <code>file:../data/app.db</code>), <code>SESSION_SECRET</code> (generate with <code>openssl rand -base64 32</code>), <code>APP_URL</code> (<code>http://localhost:3000</code> for dev), and the bootstrap officer's <code>BOOTSTRAP_OFFICER_EMAIL</code> / <code>BOOTSTRAP_OFFICER_PASSWORD</code> / <code>BOOTSTRAP_OFFICER_NAME</code>. Optionally set <code>SEED_DEMO=true</code> to get demo events and a demo member.</p>
+        <p>Open <code>.env</code> and set: <code>DATABASE_URL</code> (e.g. <code>file:../data/app.db</code>), <code>SESSION_SECRET</code> (generate with <code>openssl rand -base64 32</code>), <code>APP_URL</code> (<code>http://localhost:3000</code> for dev), and the first admin's <code>ADMIN_EMAIL</code> / <code>ADMIN_PASSWORD</code> / <code>ADMIN_NAME</code>. Optionally set <code>SEED_DEMO=true</code> to get demo events and a demo member.</p>
       </div>
       <div class="step">
         <h3>Create the database and seed it</h3>
-        <p>Migrations create the SQLite file; the seed script creates the bootstrap officer (pre-verified, so no email round-trip is needed).</p>
+        <p>Migrations create the SQLite file; the seed script creates the first admin (pre-verified, so no email round-trip is needed).</p>
         <pre><code>npx prisma migrate dev
 npm run db:seed</code></pre>
       </div>
@@ -295,8 +295,8 @@ npm run db:seed</code></pre>
         <pre><code>npm run dev     # http://localhost:3000</code></pre>
       </div>
       <div class="step">
-        <h3>First run: bootstrap the chapter</h3>
-        <p>Log in with the bootstrap officer account → go to <strong>Invites</strong> → create an invite link → open it to sign up a member → verify via the emailed link → log in. Officers create events and take attendance; members sign up and watch their progress bar fill toward the yearly goal.</p>
+        <h3>First run: set up the chapter</h3>
+        <p>Log in with the admin account → go to <strong>Invites</strong> → create an invite link → open it to sign up a member → verify via the emailed link → log in. Officers create events and take attendance; members sign up and watch their progress bar fill toward the yearly goal.</p>
       </div>
       <div class="step">
         <h3>Optional: connect email and the Sheets backup</h3>
@@ -358,7 +358,7 @@ npm run build       # production build</code></pre>
           <tr><td><code>DATABASE_URL</code></td><td>SQLite path, e.g. <code>file:../data/app.db</code> <em>(required)</em></td></tr>
           <tr><td><code>SESSION_SECRET</code></td><td>HS256 signing key — <code>openssl rand -base64 32</code> <em>(required)</em></td></tr>
           <tr><td><code>APP_URL</code></td><td>Base URL used inside email links <em>(required)</em></td></tr>
-          <tr><td><code>BOOTSTRAP_OFFICER_*</code></td><td>EMAIL / PASSWORD / NAME for the first officer, created pre-verified by the seed <em>(required)</em></td></tr>
+          <tr><td><code>ADMIN_*</code></td><td>EMAIL / PASSWORD / NAME for the first admin, created pre-verified by the seed <em>(required)</em></td></tr>
           <tr><td><code>SEED_DEMO</code></td><td><code>true</code> seeds demo events + a demo member (local only)</td></tr>
           <tr><td><code>GMAIL_USER</code>, <code>GMAIL_APP_PASSWORD</code></td><td>Outgoing mail. Unset → all email becomes a no-op</td></tr>
           <tr><td><code>GOOGLE_SHEETS_SPREADSHEET_ID</code>, <code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code>GOOGLE_SERVICE_ACCOUNT_KEY</code></td><td>Sheets backup. Key is base64-encoded to avoid newline issues. Unset → no-op</td></tr>

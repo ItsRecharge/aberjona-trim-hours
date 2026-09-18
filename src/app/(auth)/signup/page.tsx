@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { AuthShell } from "@/components/AuthShell";
+import { AuthShell, fieldClass, labelClass } from "@/components/AuthShell";
 import { validateInvite } from "@/lib/services/invite-service";
 import { SignupForm } from "./SignupForm";
 
 const INVALID_MESSAGE: Record<string, string> = {
-  not_found: "This invite link is not valid.",
-  revoked: "This invite link has been revoked.",
-  expired: "This invite link has expired.",
-  exhausted: "This invite link has reached its usage limit.",
+  not_found: "This invite is not valid.",
+  revoked: "This invite has been revoked.",
+  expired: "This invite has expired.",
+  exhausted: "This invite has reached its usage limit.",
 };
 
 export default async function SignupPage({
@@ -24,8 +24,29 @@ export default async function SignupPage({
         subtitle="Sign-up is invite-only for chapter members."
       >
         <p className="text-sm text-gray-600">
-          Ask a chapter officer for an invite link, then open it to create your account.
+          Open the invite link an officer sent you, or enter your invite code below.
         </p>
+        <form method="get" action="/signup" className="mt-4 space-y-3">
+          <div>
+            <label htmlFor="invite" className={labelClass}>
+              Invite code
+            </label>
+            <input
+              id="invite"
+              name="invite"
+              required
+              autoComplete="off"
+              placeholder="XXXX-XXXX"
+              className={`${fieldClass} font-mono uppercase tracking-widest`}
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full cursor-pointer rounded-md bg-indigo-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-800"
+          >
+            Continue
+          </button>
+        </form>
         <Link
           href="/login"
           className="mt-4 inline-block text-sm font-medium text-indigo-700 hover:underline"

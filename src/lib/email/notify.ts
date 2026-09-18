@@ -13,8 +13,10 @@ import {
   hoursSummaryEmail,
   newRequestEmail,
   requestDecisionEmail,
+  strikeIssuedEmail,
   waitlistPromotedEmail,
 } from "./templates";
+import { MAX_STRIKES } from "@/lib/constants";
 
 const BCC_CHUNK = 80; // stay well under Gmail's ~500 recipients/day per blast
 
@@ -222,6 +224,33 @@ export async function notifyHourReportDecision(
         description,
         hours,
         approved,
+        await getPublicBaseUrl(),
+      ),
+    });
+  });
+}
+
+/**
+ * Strike notice. Unlike the other notifications this does not skip deactivated
+ * users: the final strike deactivates the account before this runs.
+ */
+export async function notifyStrikeIssued(
+  userId: number,
+  count: number,
+  reason: string,
+  removed: boolean,
+): Promise<void> {
+  await safeSend(async () => {
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user?.emailVerifiedAt) return;
+    await sendMail({
+      to: user.email,
+      ...strikeIssuedEmail(
+        fullName(user),
+        count,
+        MAX_STRIKES,
+        reason,
+        removed,
         await getPublicBaseUrl(),
       ),
     });

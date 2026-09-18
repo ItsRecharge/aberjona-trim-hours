@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 
 /** Wipe all rows between tests (respecting FK order). */
 export async function truncateAll(db: PrismaClient): Promise<void> {
+  await db.strike.deleteMany();
   await db.eventSignup.deleteMany();
   await db.hourReport.deleteMany();
   await db.authToken.deleteMany();

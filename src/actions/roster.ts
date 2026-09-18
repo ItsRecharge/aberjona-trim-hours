@@ -8,7 +8,8 @@ import { db } from "@/lib/db";
 import { adjustHoursSchema } from "@/lib/validation";
 import {
   createAdjustment,
-  BootstrapOfficerProtectionError,
+  AdminProtectionError,
+  canSetRole,
   setMemberActive,
   setMemberRole,
 } from "@/lib/services/roster-service";
@@ -93,23 +94,23 @@ export async function setRoleAction(formData: FormData): Promise<void> {
   const userId = Number(formData.get("userId"));
   const role = String(formData.get("role")) as Role;
 
-  // Promotions/demotions are a bootstrap-officer power.
-  if (!officer.isBootstrapOfficer) {
-    await setFlash("warning", "Only the bootstrap officer can change roles.");
+  if (role !== "member" && role !== "officer") {
+    redirect(memberPath(userId));
+  }
+  // Any officer can promote; demoting is an admin power.
+  if (!canSetRole(officer, role)) {
+    await setFlash("warning", "Only admins can demote officers.");
     redirect(memberPath(userId));
   }
   if (userId === officer.id) {
     await setFlash("warning", "You can't change your own role.");
     redirect(memberPath(userId));
   }
-  if (role !== "member" && role !== "officer") {
-    redirect(memberPath(userId));
-  }
 
   try {
     await setMemberRole(userId, role);
   } catch (err) {
-    if (err instanceof BootstrapOfficerProtectionError) {
+    if (err instanceof AdminProtectionError) {
       await setFlash("warning", err.message);
       redirect(memberPath(userId));
     }
@@ -141,7 +142,7 @@ export async function setActiveAction(formData: FormData): Promise<void> {
   try {
     await setMemberActive(userId, active);
   } catch (err) {
-    if (err instanceof BootstrapOfficerProtectionError) {
+    if (err instanceof AdminProtectionError) {
       await setFlash("warning", err.message);
       redirect(memberPath(userId));
     }

@@ -3,15 +3,12 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser, fullName } from "@/lib/current-user";
+import { requireAdmin, requireUser, fullName } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { issueAuthToken } from "@/lib/services/token-service";
-import {
-  BootstrapOfficerProtectionError,
-  setMemberActive,
-} from "@/lib/services/roster-service";
+import { AdminProtectionError, setMemberActive } from "@/lib/services/roster-service";
+import { setAdmin } from "@/lib/services/admin-service";
 import { getPublicBaseUrl } from "@/lib/services/chapter-service";
-import { verifyPassword } from "@/lib/services/auth-service";
 import { recordAudit } from "@/lib/services/audit-service";
 import { sendMail } from "@/lib/email/mailer";
 import { passwordResetEmail } from "@/lib/email/templates";
@@ -93,7 +90,7 @@ export async function sendPasswordResetForUserAction(formData: FormData): Promis
   redirect(OFFICERS_PATH);
 }
 
-/** Deactivate / reactivate an officer. Bootstrap officer is protected for year one. */
+/** Deactivate / reactivate an officer. Admins are protected until admin is revoked. */
 export async function setOfficerActiveAction(formData: FormData): Promise<void> {
   const officer = await requireUser("officer");
   const userId = Number(formData.get("userId"));
@@ -107,7 +104,7 @@ export async function setOfficerActiveAction(formData: FormData): Promise<void> 
   try {
     await setMemberActive(userId, active);
   } catch (err) {
-    if (err instanceof BootstrapOfficerProtectionError) {
+    if (err instanceof AdminProtectionError) {
       await setFlash("warning", err.message);
       redirect(OFFICERS_PATH);
     }
@@ -126,45 +123,57 @@ export async function setOfficerActiveAction(formData: FormData): Promise<void> 
   redirect(OFFICERS_PATH);
 }
 
-/**
- * Hands the bootstrap (master admin) role to another officer. Only the current
- * bootstrap officer may do this, confirmed with their password. Exactly one
- * bootstrap officer exists at a time.
- */
-export async function transferBootstrapAction(formData: FormData): Promise<void> {
-  const officer = await requireUser("officer");
-  if (!officer.isBootstrapOfficer) {
-    await setFlash("danger", "Only the bootstrap officer can transfer the role.");
+/** Admin-only: grant admin access to an active officer. */
+export async function grantAdminAction(formData: FormData): Promise<void> {
+  const me = await requireAdmin(OFFICERS_PATH);
+  const userId = Number(formData.get("userId"));
+
+  const target = await db.user.findUnique({ where: { id: userId } });
+  if (!target || target.role !== "officer" || target.deactivatedAt || target.isAdmin) {
+    await setFlash("warning", "Pick an active officer who isn't already an admin.");
     redirect(OFFICERS_PATH);
   }
 
-  const targetId = Number(formData.get("targetId"));
-  const password = String(formData.get("password") ?? "");
-
-  if (!(await verifyPassword(officer.passwordHash, password))) {
-    await setFlash("danger", "Password confirmation failed.");
-    redirect(OFFICERS_PATH);
-  }
-
-  const target = await db.user.findUnique({ where: { id: targetId } });
-  if (!target || target.role !== "officer" || target.deactivatedAt || target.id === officer.id) {
-    await setFlash("warning", "Pick an active officer to receive the bootstrap role.");
-    redirect(OFFICERS_PATH);
-  }
-
-  await db.$transaction([
-    db.user.update({ where: { id: officer.id }, data: { isBootstrapOfficer: false } }),
-    db.user.update({ where: { id: target.id }, data: { isBootstrapOfficer: true } }),
-  ]);
+  await setAdmin(target.id, true);
 
   await recordAudit({
-    actor: officer,
-    action: "bootstrap.transfer",
-    summary: `Transferred the bootstrap role to ${fullName(target)}`,
+    actor: me,
+    action: "admin.grant",
+    summary: `Made ${fullName(target)} an admin`,
     targetType: "user",
     targetId: target.id,
   });
-  await setFlash("success", `${target.firstName} is now the bootstrap officer.`);
+  await setFlash("success", `${target.firstName} is now an admin.`);
+  revalidatePath(OFFICERS_PATH);
+  redirect(OFFICERS_PATH);
+}
+
+/** Admin-only: revoke another admin's access. You can't revoke your own. */
+export async function revokeAdminAction(formData: FormData): Promise<void> {
+  const me = await requireAdmin(OFFICERS_PATH);
+  const userId = Number(formData.get("userId"));
+
+  if (userId === me.id) {
+    await setFlash("warning", "You can't revoke your own admin access.");
+    redirect(OFFICERS_PATH);
+  }
+
+  const target = await db.user.findUnique({ where: { id: userId } });
+  if (!target || !target.isAdmin) {
+    await setFlash("warning", "That user isn't an admin.");
+    redirect(OFFICERS_PATH);
+  }
+
+  await setAdmin(target.id, false);
+
+  await recordAudit({
+    actor: me,
+    action: "admin.revoke",
+    summary: `Revoked admin access from ${fullName(target)}`,
+    targetType: "user",
+    targetId: target.id,
+  });
+  await setFlash("success", `${target.firstName} is no longer an admin.`);
   revalidatePath(OFFICERS_PATH);
   redirect(OFFICERS_PATH);
 }

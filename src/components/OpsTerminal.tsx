@@ -6,7 +6,7 @@ import { runOpsShellAction, type OpsShellState } from "@/actions/ops";
 
 const INITIAL: OpsShellState = { command: "", output: "", exitCode: null };
 
-/** Interactive shell for the bootstrap super-admin. Runs server-side, root-confined. */
+/** Interactive shell for admins. Runs server-side, root-confined. */
 export function OpsTerminal() {
   const [state, action, pending] = useActionState(runOpsShellAction, INITIAL);
   const [history, setHistory] = useState<OpsShellState[]>([]);

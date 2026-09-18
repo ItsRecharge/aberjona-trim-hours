@@ -5,7 +5,7 @@ import { getEnv } from "./env";
 import { OPS_GRANT_COOKIE } from "./constants";
 import { requireUser } from "./current-user";
 import { verifyOpsGrant } from "./ops-grant";
-import { isBootstrapProtected } from "./services/bootstrap-service";
+import { isAdmin } from "./services/admin-service";
 
 function adminEmails(): Set<string> {
   const raw = getEnv().OPS_ADMIN_EMAILS ?? "";
@@ -22,8 +22,8 @@ export function isOpsConsoleEnabled(): boolean {
   return getEnv().OPS_CONSOLE_ENABLED !== "false";
 }
 
-export function isSuperAdmin(user: Pick<User, "email" | "isBootstrapOfficer">): boolean {
-  return isBootstrapProtected(user) || adminEmails().has(user.email.toLowerCase());
+export function isSuperAdmin(user: Pick<User, "email" | "isAdmin">): boolean {
+  return isAdmin(user) || adminEmails().has(user.email.toLowerCase());
 }
 
 export async function requireSuperAdmin(): Promise<User> {
@@ -33,7 +33,7 @@ export async function requireSuperAdmin(): Promise<User> {
   return user;
 }
 
-export async function hasValidOpsGrant(user: Pick<User, "id" | "email" | "isBootstrapOfficer">): Promise<boolean> {
+export async function hasValidOpsGrant(user: Pick<User, "id" | "email" | "isAdmin">): Promise<boolean> {
   const token = (await cookies()).get(OPS_GRANT_COOKIE)?.value;
   if (!token) return false;
   const grant = await verifyOpsGrant(token);
@@ -41,10 +41,10 @@ export async function hasValidOpsGrant(user: Pick<User, "id" | "email" | "isBoot
     grant &&
       grant.userId === user.id &&
       grant.email === user.email.toLowerCase() &&
-      grant.bootstrap === user.isBootstrapOfficer,
+      grant.admin === user.isAdmin,
   );
 }
 
-export async function requireOpsGrant(user: Pick<User, "id" | "email" | "isBootstrapOfficer">): Promise<void> {
+export async function requireOpsGrant(user: Pick<User, "id" | "email" | "isAdmin">): Promise<void> {
   if (!(await hasValidOpsGrant(user))) redirect("/officer/ops");
 }

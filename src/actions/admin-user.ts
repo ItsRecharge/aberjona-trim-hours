@@ -3,7 +3,7 @@
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser, fullName } from "@/lib/current-user";
+import { requireAdmin, fullName } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { adminProfileSchema, passwordSchema } from "@/lib/validation";
 import { hashPassword } from "@/lib/services/auth-service";
@@ -15,20 +15,10 @@ function memberPath(id: number) {
   return `/officer/members/${id}`;
 }
 
-/** Asserts the caller is the bootstrap officer; redirects with a flash otherwise. */
-async function requireBootstrap(redirectTo: string) {
-  const officer = await requireUser("officer");
-  if (!officer.isBootstrapOfficer) {
-    await setFlash("danger", "Only the bootstrap officer can edit user data directly.");
-    redirect(redirectTo);
-  }
-  return officer;
-}
-
-/** Bootstrap-only: edit a user's name, email, and graduation year directly. */
-export async function bootstrapEditProfileAction(formData: FormData): Promise<void> {
+/** Admin-only: edit a user's name, email, and graduation year directly. */
+export async function adminEditProfileAction(formData: FormData): Promise<void> {
   const userId = Number(formData.get("userId"));
-  const officer = await requireBootstrap(memberPath(userId));
+  const officer = await requireAdmin(memberPath(userId));
 
   const parsed = adminProfileSchema.safeParse({
     firstName: formData.get("firstName"),
@@ -83,10 +73,10 @@ export async function bootstrapEditProfileAction(formData: FormData): Promise<vo
   redirect(memberPath(userId));
 }
 
-/** Bootstrap-only: set a user's password directly and log them out everywhere. */
-export async function bootstrapSetPasswordAction(formData: FormData): Promise<void> {
+/** Admin-only: set a user's password directly and log them out everywhere. */
+export async function adminSetPasswordAction(formData: FormData): Promise<void> {
   const userId = Number(formData.get("userId"));
-  const officer = await requireBootstrap(memberPath(userId));
+  const officer = await requireAdmin(memberPath(userId));
 
   const parsed = passwordSchema.safeParse(formData.get("password"));
   if (!parsed.success) {

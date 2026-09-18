@@ -17,7 +17,7 @@ model User {
   pendingEmail    String? // requested new email, awaiting verification
   passwordHash    String
   role            String    @default("member") // "member" | "officer"
-  isBootstrapOfficer Boolean @default(false)
+  isAdmin         Boolean   @default(false) // chapter admin; multiple allowed, only admins grant it
   graduationYear  Int? // class year, for reporting and rollover
   deactivatedAt   DateTime? // set when an officer removes a member; blocks login
   emailVerifiedAt DateTime?
@@ -33,6 +33,8 @@ model User {
   hourReports     HourReport[]  @relation("ReportOwner")
   reviewedReports HourReport[]  @relation("ReportReviewer")
   domainDismissals DomainReminderDismissal[]
+  strikesReceived Strike[]      @relation("StrikeRecipient")
+  strikesIssued   Strike[]      @relation("StrikeIssuer")
 }
 
 model Event {
@@ -114,8 +116,23 @@ model InviteToken {
   useCount    Int       @default(0)
   revokedAt   DateTime?
   createdAt   DateTime  @default(now())
+  code        String?   @unique // human-typable code for "code" invites; null for link invites
+  email       String? // recipient address when the invite was emailed
 
   createdBy User @relation(fields: [createdById], references: [id])
+}
+
+model Strike {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  issuedById Int
+  reason     String
+  createdAt  DateTime @default(now())
+
+  user     User @relation("StrikeRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  issuedBy User @relation("StrikeIssuer", fields: [issuedById], references: [id])
+
+  @@index([userId])
 }
 
 model AuthToken {

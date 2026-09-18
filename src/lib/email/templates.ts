@@ -107,6 +107,35 @@ export function inviteEmail(
   };
 }
 
+export function strikeIssuedEmail(
+  name: string,
+  count: number,
+  max: number,
+  reason: string,
+  removed: boolean,
+  baseUrl: string = appUrl(),
+): EmailContent {
+  const url = removed ? `${baseUrl}/login` : `${baseUrl}/member/dashboard`;
+  return removed
+    ? {
+        subject: subject(`Removed from the chapter after ${max} strikes`),
+        html: layout(
+          `Membership ended`,
+          `<p>Hi ${name}, you have received strike <strong>${count} of ${max}</strong>: <em>${reason}</em>.</p><p>Reaching ${max} strikes removes you from the chapter, so your account has been deactivated. Contact an officer if you have questions.</p>`,
+        ),
+        text: `Hi ${name}, you have received strike ${count} of ${max}: ${reason}.\n\nReaching ${max} strikes removes you from the chapter, so your account has been deactivated. Contact an officer if you have questions.`,
+      }
+    : {
+        subject: subject(`Disciplinary strike issued (${count} of ${max})`),
+        html: layout(
+          `Strike ${count} of ${max}`,
+          `<p>Hi ${name}, an officer has issued you a disciplinary strike: <em>${reason}</em>.</p><p>You now have <strong>${count} of ${max}</strong> strikes. Reaching ${max} results in removal from the chapter.</p>`,
+          { label: "View Dashboard", url },
+        ),
+        text: `Hi ${name}, an officer has issued you a disciplinary strike: ${reason}.\n\nYou now have ${count} of ${max} strikes. Reaching ${max} results in removal from the chapter.\n${url}`,
+      };
+}
+
 export function eventPostedEmail(
   eventTitle: string,
   whenLabel: string,

@@ -1,8 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { db } from "../db";
-import { hashToken } from "../tokens";
 import { hashPassword } from "./auth-service";
 import { issueAuthToken } from "./token-service";
+import { findInviteByRaw } from "./invite-service";
 import { isAllowedSignupEmail, type Role } from "../constants";
 
 export type SignupResult =
@@ -26,11 +26,10 @@ export async function signupWithInvite(params: {
   rawInviteToken: string;
 }): Promise<SignupResult> {
   const passwordHash = await hashPassword(params.password);
-  const inviteHash = hashToken(params.rawInviteToken);
 
   try {
     return await db.$transaction(async (tx) => {
-      const invite = await tx.inviteToken.findUnique({ where: { tokenHash: inviteHash } });
+      const invite = await findInviteByRaw(params.rawInviteToken, tx);
       const now = new Date();
       if (!invite || invite.revokedAt || invite.expiresAt < now) {
         return { ok: false, reason: "invalid_invite" } as const;
