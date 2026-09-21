@@ -92,7 +92,16 @@ export async function listEvents() {
     include: {
       timeslots: {
         orderBy: [{ date: "asc" }, { startTime: "asc" }],
-        include: { signups: { select: { status: true } } },
+        include: {
+          signups: {
+            select: {
+              id: true,
+              status: true,
+              user: { select: { firstName: true, lastName: true } },
+            },
+            orderBy: [{ status: "asc" }, { signedUpAt: "asc" }],
+          },
+        },
       },
     },
     orderBy: { createdAt: "desc" },

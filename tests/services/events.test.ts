@@ -6,6 +6,7 @@ import {
   approveRequest,
   createEvent,
   denyRequest,
+  listEvents,
   requestEvent,
   updateSlotQuota,
 } from "@/lib/services/event-service";
@@ -89,6 +90,25 @@ describe("event request lifecycle", () => {
     );
     const denied = await denyRequest(req.id);
     expect(denied?.status).toBe("cancelled");
+  });
+});
+
+describe("listEvents", () => {
+  it("includes each signup's name and status, confirmed before waitlisted", async () => {
+    const { officer, members } = await makeUsers(3);
+    const event = await createEvent({ title: "Concert", slots: [slot(2)] }, officer.id);
+    const slotId = await firstSlotId(event.id);
+    await signupForSlot(slotId, members[0].id);
+    await signupForSlot(slotId, members[1].id);
+    await signupForSlot(slotId, members[2].id);
+
+    const [listed] = await listEvents();
+    const signups = listed.timeslots[0].signups;
+    expect(signups.map((s) => [s.status, s.user.firstName, s.user.lastName])).toEqual([
+      ["confirmed", "M0", "B"],
+      ["confirmed", "M1", "B"],
+      ["waitlisted", "M2", "B"],
+    ]);
   });
 });
 

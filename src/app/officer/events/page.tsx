@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/current-user";
+import { requireUser, fullName } from "@/lib/current-user";
 import { listEvents } from "@/lib/services/event-service";
 import { createEventAction } from "@/actions/events";
 import { EventFormFields } from "@/components/forms/EventForm";
@@ -33,7 +33,7 @@ export default async function OfficerEventsPage() {
             <thead className="bg-gray-50 text-left text-xs text-gray-500 uppercase">
               <tr>
                 <th className="px-6 py-3">Event</th>
-                <th className="px-6 py-3">Timeslots</th>
+                <th className="px-6 py-3">Timeslots &amp; volunteers</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3 text-right">Action</th>
               </tr>
@@ -45,21 +45,48 @@ export default async function OfficerEventsPage() {
                     <p className="font-medium text-gray-900">{e.title}</p>
                   </td>
                   <td className="px-6 py-3 text-gray-600">
-                    <ul className="space-y-1">
+                    <ul className="space-y-2">
                       {e.timeslots.map((slot) => {
                         const confirmed = slot.signups.filter(
                           (s) => s.status === "confirmed",
-                        ).length;
+                        );
                         const waiting = slot.signups.filter(
                           (s) => s.status === "waitlisted",
-                        ).length;
+                        );
                         return (
                           <li key={slot.id} className="text-xs">
-                            {formatSlot(slot)} · {slot.hoursValue} hrs ·{" "}
-                            <span className="font-medium">
-                              {confirmed}/{slot.quota}
-                            </span>
-                            {waiting > 0 ? ` (+${waiting} waitlisted)` : ""}
+                            <p>
+                              {formatSlot(slot)} · {slot.hoursValue} hrs ·{" "}
+                              <span className="font-medium">
+                                {confirmed.length}/{slot.quota}
+                              </span>
+                              {waiting.length > 0
+                                ? ` (+${waiting.length} waitlisted)`
+                                : ""}
+                            </p>
+                            {confirmed.length === 0 && waiting.length === 0 ? (
+                              <p className="text-gray-400">No signups yet</p>
+                            ) : (
+                              <ul className="mt-0.5 flex flex-wrap gap-1">
+                                {confirmed.map((s) => (
+                                  <li
+                                    key={s.id}
+                                    className="rounded-full bg-green-50 px-2 py-0.5 text-green-800"
+                                  >
+                                    {fullName(s.user)}
+                                  </li>
+                                ))}
+                                {waiting.map((s) => (
+                                  <li
+                                    key={s.id}
+                                    className="rounded-full bg-yellow-50 px-2 py-0.5 text-yellow-800"
+                                    title="Waitlisted"
+                                  >
+                                    {fullName(s.user)} (waitlist)
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </li>
                         );
                       })}
