@@ -33,92 +33,124 @@ export default async function OfficerEventsPage() {
             <thead className="bg-gray-50 text-left text-xs text-gray-500 uppercase">
               <tr>
                 <th className="px-6 py-3">Event</th>
-                <th className="px-6 py-3">Timeslots &amp; volunteers</th>
+                <th className="px-6 py-3">Timeslots</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {events.map((e) => (
-                <tr key={e.id}>
-                  <td className="px-6 py-3 align-top">
-                    <p className="font-medium text-gray-900">{e.title}</p>
-                  </td>
-                  <td className="px-6 py-3 text-gray-600">
-                    <ul className="space-y-2">
-                      {e.timeslots.map((slot) => {
-                        const confirmed = slot.signups.filter(
-                          (s) => s.status === "confirmed",
-                        );
-                        const waiting = slot.signups.filter(
-                          (s) => s.status === "waitlisted",
-                        );
-                        return (
-                          <li key={slot.id} className="text-xs">
-                            <p>
+              {events.map((e) => {
+                const totalSignups = e.timeslots.reduce(
+                  (n, slot) => n + slot.signups.length,
+                  0,
+                );
+                return (
+                  <tr key={e.id}>
+                    <td className="px-6 py-3 align-top">
+                      <p className="font-medium text-gray-900">{e.title}</p>
+                    </td>
+                    <td className="px-6 py-3 text-gray-600">
+                      <ul className="space-y-1">
+                        {e.timeslots.map((slot) => {
+                          const confirmed = slot.signups.filter(
+                            (s) => s.status === "confirmed",
+                          ).length;
+                          const waiting = slot.signups.filter(
+                            (s) => s.status === "waitlisted",
+                          ).length;
+                          return (
+                            <li key={slot.id} className="text-xs">
                               {formatSlot(slot)} · {slot.hoursValue} hrs ·{" "}
                               <span className="font-medium">
-                                {confirmed.length}/{slot.quota}
+                                {confirmed}/{slot.quota}
                               </span>
-                              {waiting.length > 0
-                                ? ` (+${waiting.length} waitlisted)`
-                                : ""}
-                            </p>
-                            {confirmed.length === 0 && waiting.length === 0 ? (
-                              <p className="text-gray-400">No signups yet</p>
-                            ) : (
-                              <ul className="mt-0.5 flex flex-wrap gap-1">
-                                {confirmed.map((s) => (
-                                  <li
-                                    key={s.id}
-                                    className="rounded-full bg-green-50 px-2 py-0.5 text-green-800"
-                                  >
-                                    {fullName(s.user)}
-                                  </li>
-                                ))}
-                                {waiting.map((s) => (
-                                  <li
-                                    key={s.id}
-                                    className="rounded-full bg-yellow-50 px-2 py-0.5 text-yellow-800"
-                                    title="Waitlisted"
-                                  >
-                                    {fullName(s.user)} (waitlist)
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </td>
-                  <td className="px-6 py-3 align-top">
-                    <StatusBadge status={e.status} />
-                  </td>
-                  <td className="px-6 py-3 text-right align-top">
-                    <div className="flex flex-col items-end gap-1">
-                      {(e.status === "active" || e.status === "completed") && (
-                        <Link
-                          href={`/officer/events/${e.id}/attendance`}
-                          className="text-sm font-medium text-indigo-700 hover:underline"
-                        >
-                          {e.status === "completed"
-                            ? "Edit attendance"
-                            : "Take attendance"}
-                        </Link>
+                              {waiting > 0 ? ` (+${waiting} waitlisted)` : ""}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {totalSignups > 0 && (
+                        <details className="group mt-2">
+                          <summary className="inline-block cursor-pointer list-none rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 transition select-none hover:bg-gray-50">
+                            <span className="group-open:hidden">
+                              Show signups
+                            </span>
+                            <span className="hidden group-open:inline">
+                              Hide signups
+                            </span>
+                          </summary>
+                          <ul className="mt-2 space-y-2">
+                            {e.timeslots.map((slot) => {
+                              const confirmed = slot.signups.filter(
+                                (s) => s.status === "confirmed",
+                              );
+                              const waiting = slot.signups.filter(
+                                (s) => s.status === "waitlisted",
+                              );
+                              return (
+                                <li key={slot.id} className="text-xs">
+                                  <p className="font-medium text-gray-700">
+                                    {formatSlot(slot)}
+                                  </p>
+                                  {confirmed.length === 0 &&
+                                  waiting.length === 0 ? (
+                                    <p className="text-gray-400">No signups</p>
+                                  ) : (
+                                    <ul className="mt-0.5 flex flex-wrap gap-1">
+                                      {confirmed.map((s) => (
+                                        <li
+                                          key={s.id}
+                                          className="rounded-full bg-green-50 px-2 py-0.5 text-green-800"
+                                        >
+                                          {fullName(s.user)}
+                                        </li>
+                                      ))}
+                                      {waiting.map((s) => (
+                                        <li
+                                          key={s.id}
+                                          className="rounded-full bg-yellow-50 px-2 py-0.5 text-yellow-800"
+                                        >
+                                          {fullName(s.user)} (waitlist)
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </details>
                       )}
-                      {e.status !== "cancelled" && (
-                        <Link
-                          href={`/officer/events/${e.id}/edit`}
-                          className="text-sm font-medium text-gray-600 hover:underline"
-                        >
-                          Edit
-                        </Link>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-3 align-top">
+                      <StatusBadge status={e.status} />
+                    </td>
+                    <td className="px-6 py-3 text-right align-top">
+                      <div className="flex flex-col items-end gap-1">
+                        {(e.status === "active" ||
+                          e.status === "completed") && (
+                          <Link
+                            href={`/officer/events/${e.id}/attendance`}
+                            className="text-sm font-medium text-indigo-700 hover:underline"
+                          >
+                            {e.status === "completed"
+                              ? "Edit attendance"
+                              : "Take attendance"}
+                          </Link>
+                        )}
+                        {e.status !== "cancelled" && (
+                          <Link
+                            href={`/officer/events/${e.id}/edit`}
+                            className="text-sm font-medium text-gray-600 hover:underline"
+                          >
+                            Edit
+                          </Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
