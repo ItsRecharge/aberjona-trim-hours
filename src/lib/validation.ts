@@ -171,3 +171,12 @@ export const adjustHoursSchema = z.object({
     .refine((n) => n !== 0, "Hours can't be zero")
     .refine((n) => Math.abs(n) <= 100, "That's too many hours"),
 });
+
+/** Officer email to chosen event signups. `signupIds` comes from getAll("signupId"). */
+export const eventEmailSchema = z.object({
+  subject: z.string().trim().min(1, "Subject is required").max(200, "Subject is too long"),
+  body: z.string().trim().min(1, "Message is required").max(5000, "Message is too long"),
+  signupIds: z
+    .array(z.coerce.number().int().positive())
+    .min(1, "Select at least one recipient"),
+});

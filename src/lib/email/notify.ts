@@ -8,6 +8,7 @@ import {
   domainRenewalEmail,
   eventCancelledEmail,
   eventPostedEmail,
+  eventSignupEmail,
   hourReportDecisionEmail,
   hoursCreditedEmail,
   hoursSummaryEmail,
@@ -255,4 +256,24 @@ export async function notifyStrikeIssued(
       ),
     });
   });
+}
+
+/**
+ * Officer-composed message to chosen event signups, BCC in chunks with
+ * reply-to set to the officer. Unlike the other notifiers this is NOT wrapped
+ * in safeSend: the action reports the outcome to the officer. Returns false
+ * when mail is unconfigured; throws on transport error.
+ */
+export async function emailEventSignups(input: {
+  emails: string[];
+  subject: string;
+  body: string;
+  officer: { firstName: string; lastName: string; email: string };
+}): Promise<boolean> {
+  const content = eventSignupEmail(input.subject, input.body, fullName(input.officer));
+  for (const group of chunk(input.emails, BCC_CHUNK)) {
+    const sent = await sendMail({ bcc: group, replyTo: input.officer.email, ...content });
+    if (!sent) return false;
+  }
+  return true;
 }

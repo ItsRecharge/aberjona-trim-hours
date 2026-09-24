@@ -153,6 +153,15 @@ export const TEST_TEMPLATES: Record<string, TemplateEntry> = {
         bool(v.approved),
       ),
   },
+  event_signup_email: {
+    label: "Officer message to event signups",
+    fields: [
+      { name: "subject", label: "Subject", default: "Spring Concert Setup" },
+      { name: "body", label: "Message", default: "Please arrive 15 minutes early." },
+      { name: "officer", label: "Officer name", default: "Olive Officer" },
+    ],
+    build: (v) => t.eventSignupEmail(v.subject, v.body, v.officer),
+  },
 };
 
 export type TemplateKey = keyof typeof TEST_TEMPLATES;

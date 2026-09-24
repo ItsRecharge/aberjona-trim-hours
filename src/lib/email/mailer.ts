@@ -9,6 +9,7 @@ export interface MailMessage {
   subject: string;
   html: string;
   text: string;
+  replyTo?: string;
 }
 
 /**
@@ -39,6 +40,7 @@ export async function sendMail(msg: MailMessage): Promise<boolean> {
     subject: msg.subject,
     html: msg.html,
     text: msg.text,
+    replyTo: msg.replyTo,
   });
   return true;
 }

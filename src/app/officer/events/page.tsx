@@ -146,6 +146,14 @@ export default async function OfficerEventsPage() {
                             Edit
                           </Link>
                         )}
+                        {totalSignups > 0 && (
+                          <Link
+                            href={`/officer/events/${e.id}/email`}
+                            className="text-sm font-medium text-gray-600 hover:underline"
+                          >
+                            Email signups
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

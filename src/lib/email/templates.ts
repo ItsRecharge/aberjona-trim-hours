@@ -326,3 +326,30 @@ export function domainRenewalEmail(
       `Sign in to Cloudflare with ${signInEmail} using "Sign in with Google", then renew it here:\n${renewalUrl}`,
   };
 }
+
+/** Escape officer-typed text before it goes into the HTML layout. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Officer-composed message to chosen event signups. Body is plain text. */
+export function eventSignupEmail(
+  subjectLine: string,
+  body: string,
+  officerName: string,
+): EmailContent {
+  const bodyHtml = escapeHtml(body).replace(/\r?\n/g, "<br>");
+  return {
+    subject: subject(subjectLine),
+    html: layout(
+      escapeHtml(subjectLine),
+      `<p>${bodyHtml}</p><p style="color:#6b7280;font-size:12px;margin-top:18px;">Sent by ${escapeHtml(officerName)}</p>`,
+    ),
+    text: `${body}\n\n— Sent by ${officerName}`,
+  };
+}
