@@ -17,7 +17,10 @@ const STYLES: Record<FlashMessage["category"], string> = {
 export function FlashMessages({ messages }: { messages: FlashMessage[] }) {
   const [visible, setVisible] = useState(messages);
 
+  // The layout stays mounted across server-action redirects, so new messages
+  // arrive as a prop change rather than a fresh mount.
   useEffect(() => {
+    setVisible(messages);
     if (messages.length > 0) {
       document.cookie = "trim_flash=; path=/; max-age=0";
     }
