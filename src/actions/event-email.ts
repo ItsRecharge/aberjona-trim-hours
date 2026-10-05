@@ -37,37 +37,34 @@ export async function emailSignupsAction(formData: FormData): Promise<void> {
     redirect(backTo);
   }
 
-  let destination = "/officer/events";
-  try {
-    const sent = await emailEventSignups({
-      emails: recipients.emails,
-      subject: parsed.data.subject,
-      body: parsed.data.body,
-      officer,
-    });
-    if (sent) {
-      const n = recipients.emails.length;
-      await recordAudit({
-        actor: officer,
-        action: "event.email",
-        summary: `Emailed ${n} signup(s) for "${recipients.eventTitle}": "${parsed.data.subject}"`,
-        targetType: "event",
-        targetId: eventId,
-      });
-      await setFlash(
-        "success",
-        `Emailed ${n} member${n === 1 ? "" : "s"} about "${recipients.eventTitle}".`,
-      );
-    } else {
-      await setFlash(
-        "warning",
-        "Email isn't configured yet — set it up under Integrations.",
-      );
-    }
-  } catch (err) {
-    console.error("[event-email] send failed:", err);
-    await setFlash("danger", "Sending failed — check the email configuration.");
-    destination = backTo;
+  const { unconfigured, sent } = await emailEventSignups({
+    emails: recipients.emails,
+    subject: parsed.data.subject,
+    body: parsed.data.body,
+    officer,
+  });
+  if (unconfigured) {
+    await setFlash("warning", "Email isn't configured yet — set it up under Integrations.");
+    redirect("/officer/events");
   }
-  redirect(destination);
+  if (sent === 0) {
+    await setFlash("danger", "Sending failed — check the email configuration.");
+    redirect(backTo);
+  }
+
+  const total = recipients.emails.length;
+  await recordAudit({
+    actor: officer,
+    action: "event.email",
+    summary: `Emailed ${sent} signup(s) for "${recipients.eventTitle}": "${parsed.data.subject}"`,
+    targetType: "event",
+    targetId: eventId,
+  });
+  await setFlash(
+    sent === total ? "success" : "warning",
+    sent === total
+      ? `Emailed ${total} member${total === 1 ? "" : "s"} about "${recipients.eventTitle}".`
+      : `Emailed ${sent} of ${total} members about "${recipients.eventTitle}"; the rest failed to send.`,
+  );
+  redirect("/officer/events");
 }

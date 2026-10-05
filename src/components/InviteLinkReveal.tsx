@@ -3,20 +3,22 @@
 import { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-/** Reads the one-time invite cookie (a link or a code), shows it with a copy button, clears it. */
-export function InviteLinkReveal() {
-  const [link, setLink] = useState<string | null>(null);
+/**
+ * Shows the one-time invite (a link or a code) read server-side from its
+ * cookie, with a copy button, then clears the cookie.
+ */
+export function InviteLinkReveal({ value }: { value: string | null }) {
+  const [link, setLink] = useState<string | null>(value);
   const [copied, setCopied] = useState(false);
 
+  // The page stays mounted across the create-invite redirect, so a new invite
+  // arrives as a prop change rather than a fresh mount.
   useEffect(() => {
-    const match = document.cookie
-      .split("; ")
-      .find((c) => c.startsWith("trim_last_invite="));
-    if (match) {
-      setLink(decodeURIComponent(match.split("=").slice(1).join("=")));
+    if (value) {
+      setLink(value);
       document.cookie = "trim_last_invite=; path=/officer/invites; max-age=0";
     }
-  }, []);
+  }, [value]);
 
   if (!link) return null;
   const isCode = !link.startsWith("http");

@@ -9,9 +9,9 @@ import {
   resolveEmailRecipients,
 } from "@/lib/services/event-email-service";
 import { emailEventSignups } from "@/lib/email/notify";
-import { sendMail } from "@/lib/email/mailer";
+import { sendMailBatch } from "@/lib/email/mailer";
 
-vi.mock("@/lib/email/mailer", () => ({ sendMail: vi.fn() }));
+vi.mock("@/lib/email/mailer", () => ({ sendMailBatch: vi.fn() }));
 
 async function makeOfficer() {
   return db.user.create({
@@ -64,7 +64,11 @@ async function signupId(timeslotId: number, userId: number) {
 beforeEach(async () => {
   await truncateAll(db);
   vi.clearAllMocks();
-  vi.mocked(sendMail).mockResolvedValue(true);
+  vi.mocked(sendMailBatch).mockImplementation(async (recipients) => ({
+    unconfigured: false,
+    sent: recipients.length,
+    failed: [],
+  }));
 });
 
 describe("getEventForEmail", () => {
@@ -159,45 +163,30 @@ describe("resolveEmailRecipients", () => {
 describe("emailEventSignups", () => {
   const officer = { firstName: "Olive", lastName: "Officer", email: "o@test.local" };
 
-  it("sends one BCC email with reply-to set to the officer", async () => {
-    const sent = await emailEventSignups({
+  it("sends one batched BCC email with reply-to set to the officer", async () => {
+    const result = await emailEventSignups({
       emails: ["a@test.local", "b@test.local"],
       subject: "Call time",
       body: "Meet at 3pm.",
       officer,
     });
-    expect(sent).toBe(true);
-    expect(sendMail).toHaveBeenCalledTimes(1);
-    const msg = vi.mocked(sendMail).mock.calls[0][0];
-    expect(msg.bcc).toEqual(["a@test.local", "b@test.local"]);
+    expect(result).toEqual({ unconfigured: false, sent: 2, failed: [] });
+    expect(sendMailBatch).toHaveBeenCalledTimes(1);
+    const [recipients, msg] = vi.mocked(sendMailBatch).mock.calls[0];
+    expect(recipients).toEqual(["a@test.local", "b@test.local"]);
     expect(msg.replyTo).toBe("o@test.local");
     expect(msg.subject).toBe("Tri-M Hours - Call time");
     expect(msg.html).toContain("Sent by Olive Officer");
   });
 
-  it("chunks recipients at 80 per email", async () => {
-    const emails = Array.from({ length: 81 }, (_, i) => `m${i}@test.local`);
-    await emailEventSignups({ emails, subject: "S", body: "B", officer });
-    expect(sendMail).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(sendMail).mock.calls[0][0].bcc).toHaveLength(80);
-    expect(vi.mocked(sendMail).mock.calls[1][0].bcc).toHaveLength(1);
-  });
-
-  it("returns false when mail is unconfigured", async () => {
-    vi.mocked(sendMail).mockResolvedValue(false);
-    const sent = await emailEventSignups({
+  it("passes through the unconfigured result", async () => {
+    vi.mocked(sendMailBatch).mockResolvedValue({ unconfigured: true, sent: 0, failed: [] });
+    const result = await emailEventSignups({
       emails: ["a@test.local"],
       subject: "S",
       body: "B",
       officer,
     });
-    expect(sent).toBe(false);
-  });
-
-  it("propagates transport errors", async () => {
-    vi.mocked(sendMail).mockRejectedValue(new Error("smtp down"));
-    await expect(
-      emailEventSignups({ emails: ["a@test.local"], subject: "S", body: "B", officer }),
-    ).rejects.toThrow("smtp down");
+    expect(result.unconfigured).toBe(true);
   });
 });

@@ -21,6 +21,7 @@ model User {
   graduationYear  Int? // class year, for reporting and rollover
   deactivatedAt   DateTime? // set when an officer removes a member; blocks login
   emailVerifiedAt DateTime?
+  puzzlePrankUntil DateTime? // admin prank: puzzle before each visit until this time
   createdAt       DateTime  @default(now())
 
   signups         EventSignup[] @relation("UserSignups")

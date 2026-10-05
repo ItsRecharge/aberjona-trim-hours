@@ -6,7 +6,7 @@ import { requireUser, fullName } from "@/lib/current-user";
 import { inviteSchema } from "@/lib/validation";
 import { createInvite, revokeInvite } from "@/lib/services/invite-service";
 import { getChapterSettings, getPublicBaseUrl } from "@/lib/services/chapter-service";
-import { sendMail } from "@/lib/email/mailer";
+import { sendMailEach } from "@/lib/email/mailer";
 import { inviteEmail } from "@/lib/email/templates";
 import { recordAudit } from "@/lib/services/audit-service";
 import { setFlash } from "@/lib/flash";
@@ -39,7 +39,7 @@ export async function createInviteAction(formData: FormData): Promise<void> {
   if (emails.length > 0) {
     // Emailed invites: one single-use link per address; type and max uses are ignored.
     const chapterName = (await getChapterSettings()).chapterName;
-    let sent = 0;
+    const messages = [];
     for (const email of emails) {
       const { invite, rawToken } = await createInvite({
         createdById: officer.id,
@@ -49,15 +49,10 @@ export async function createInviteAction(formData: FormData): Promise<void> {
         email,
       });
       const link = `${baseUrl}/signup?invite=${rawToken}`;
-      try {
-        await sendMail({
-          to: email,
-          ...inviteEmail(link, invite.expiresAt, fullName(officer), chapterName),
-        });
-        sent++;
-      } catch (err) {
-        console.error("[invites] email failed:", email, err);
-      }
+      messages.push({
+        to: email,
+        ...inviteEmail(link, invite.expiresAt, fullName(officer), chapterName),
+      });
       await recordAudit({
         actor: officer,
         action: "invite.create",
@@ -66,6 +61,8 @@ export async function createInviteAction(formData: FormData): Promise<void> {
         targetId: invite.id,
       });
     }
+    // One SMTP connection for the whole list so Gmail doesn't throttle us.
+    const { sent } = await sendMailEach(messages);
     const total = emails.length;
     if (sent === total) {
       await setFlash("success", `Emailed ${total} invite${total === 1 ? "" : "s"}.`);

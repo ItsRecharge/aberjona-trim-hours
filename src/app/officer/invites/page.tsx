@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { requireUser, fullName } from "@/lib/current-user";
 import { listActiveInvites } from "@/lib/services/invite-service";
 import { createInviteAction, revokeInviteAction } from "@/actions/invites";
@@ -13,6 +14,7 @@ const label = "mb-1 block text-sm font-medium text-gray-700";
 export default async function OfficerInvitesPage() {
   await requireUser("officer");
   const invites = await listActiveInvites();
+  const lastInvite = (await cookies()).get("trim_last_invite")?.value ?? null;
 
   return (
     <div className="space-y-8">
@@ -24,7 +26,7 @@ export default async function OfficerInvitesPage() {
         </p>
       </div>
 
-      <InviteLinkReveal />
+      <InviteLinkReveal value={lastInvite} />
 
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">Create invite</h2>

@@ -16,6 +16,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { adjustHoursAction, setActiveAction, setRoleAction } from "@/actions/roster";
 import { adminEditProfileAction, adminSetPasswordAction } from "@/actions/admin-user";
 import { startImpersonationAction } from "@/actions/impersonation";
+import { setPuzzlePrankAction } from "@/actions/puzzle-prank";
 import { formatEventDate } from "@/lib/format";
 
 const field =
@@ -41,6 +42,7 @@ export default async function MemberDetailPage({
   ]);
   const isSelf = member.id === officer.id;
   const adminProtected = isAdmin(member);
+  const prankActive = !!member.puzzlePrankUntil && member.puzzlePrankUntil > new Date();
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -233,6 +235,47 @@ export default async function MemberDetailPage({
               </button>
             </form>
           </div>
+        </section>
+      )}
+
+      {officer.isAdmin && (
+        <section className="rounded-xl border border-purple-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900">Admin — puzzle prank 🧩</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            Make this user solve a random puzzle at the start of every visit (once
+            an hour). Only admins see this, and it isn&apos;t audit-logged.
+          </p>
+          {prankActive ? (
+            <form action={setPuzzlePrankAction} className="flex flex-wrap items-center gap-3">
+              <input type="hidden" name="userId" value={member.id} />
+              <input type="hidden" name="length" value="off" />
+              <span className="text-sm text-purple-800">
+                Active{" "}
+                {member.puzzlePrankUntil!.getFullYear() > 9000
+                  ? "until turned off"
+                  : `until ${member.puzzlePrankUntil!.toLocaleString("en-US", {
+                      timeZone: "America/New_York",
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}`}
+              </span>
+              <SubmitButton pendingText="Stopping…">Stop prank</SubmitButton>
+            </form>
+          ) : (
+            <form action={setPuzzlePrankAction} className="flex flex-wrap items-end gap-3">
+              <input type="hidden" name="userId" value={member.id} />
+              <div>
+                <label htmlFor="prankLength" className={label}>Length</label>
+                <select id="prankLength" name="length" defaultValue="1" className={field}>
+                  <option value="1">1 day</option>
+                  <option value="3">3 days</option>
+                  <option value="7">1 week</option>
+                  <option value="forever">Until turned off</option>
+                </select>
+              </div>
+              <SubmitButton pendingText="Starting…">Start prank</SubmitButton>
+            </form>
+          )}
         </section>
       )}
 

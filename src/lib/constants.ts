@@ -45,6 +45,10 @@ export function isAllowedSignupEmail(email: string): boolean {
 
 export const SESSION_COOKIE = "trim_session";
 export const FLASH_COOKIE = "trim_flash";
+
+// Admin puzzle prank: solving one puzzle skips the rest for this long.
+export const PUZZLE_PASS_COOKIE = "trim_puzzle_ok";
+export const PUZZLE_PASS_SECONDS = 60 * 60;
 export const OPS_GRANT_COOKIE = "trim_ops_grant";
 // Holds the admin's own session token while they impersonate someone,
 // so "stop impersonating" can restore it.

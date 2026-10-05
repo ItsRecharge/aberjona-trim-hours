@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireUser, fullName } from "@/lib/current-user";
 import { getFlash } from "@/lib/flash";
 import { FlashMessages } from "@/components/FlashMessages";
+import { PuzzleGate } from "@/components/PuzzleGate";
+import { mustSolvePuzzle } from "@/lib/puzzle-prank";
 import { AccountControls } from "@/components/AccountControls";
 import { BottomNav } from "@/components/BottomNav";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -13,6 +15,7 @@ export default async function MemberLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser("member");
+  if (await mustSolvePuzzle(user)) return <PuzzleGate />;
   const flash = await getFlash();
 
   return (
