@@ -96,6 +96,7 @@ export async function listEvents() {
           signups: {
             select: {
               id: true,
+              userId: true,
               status: true,
               user: { select: { firstName: true, lastName: true } },
             },

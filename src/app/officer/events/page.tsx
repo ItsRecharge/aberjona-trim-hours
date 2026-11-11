@@ -4,6 +4,7 @@ import { listEvents } from "@/lib/services/event-service";
 import { createEventAction } from "@/actions/events";
 import { EventFormFields } from "@/components/forms/EventForm";
 import { StatusBadge } from "@/components/StatusBadge";
+import { RemoveSignupButton } from "@/components/RemoveSignupButton";
 import { formatSlot } from "@/lib/format";
 
 export default async function OfficerEventsPage() {
@@ -100,17 +101,27 @@ export default async function OfficerEventsPage() {
                                       {confirmed.map((s) => (
                                         <li
                                           key={s.id}
-                                          className="rounded-full bg-green-50 px-2 py-0.5 text-green-800"
+                                          className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-green-800"
                                         >
                                           {fullName(s.user)}
+                                          <RemoveSignupButton
+                                            timeslotId={slot.id}
+                                            userId={s.userId}
+                                            name={fullName(s.user)}
+                                          />
                                         </li>
                                       ))}
                                       {waiting.map((s) => (
                                         <li
                                           key={s.id}
-                                          className="rounded-full bg-yellow-50 px-2 py-0.5 text-yellow-800"
+                                          className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-0.5 text-yellow-800"
                                         >
                                           {fullName(s.user)} (waitlist)
+                                          <RemoveSignupButton
+                                            timeslotId={slot.id}
+                                            userId={s.userId}
+                                            name={fullName(s.user)}
+                                          />
                                         </li>
                                       ))}
                                     </ul>
